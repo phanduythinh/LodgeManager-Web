@@ -1,34 +1,65 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { Routes, Route, Link } from 'react-router-dom'
+import ManageCustomers from './pages/ManageCustomers'
+import ContractManagement from './pages/ContractManagement'
+import HostelManagement from './pages/HostelManagement'
+import InvoiceManagement from './pages/InvoiceManagement'
+import ServiceManagement from './pages/ServiceManagement'
+import ViewStatistics from './pages/ViewStatistics'
+
+import AppBar from '@mui/material/AppBar'
+import Box from '@mui/material/Box'
+import Toolbar from '@mui/material/Toolbar'
+import Typography from '@mui/material/Typography'
+import Button from '@mui/material/Button'
+import IconButton from '@mui/material/IconButton'
+import MenuIcon from '@mui/icons-material/Menu'
 
 function App() {
-  const [count, setCount] = useState(0)
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    <Box sx={{ flexGrow: 1 }}>
+      <AppBar position="static">
+        <Toolbar>
+          <IconButton
+            size="large"
+            edge="start"
+            color="inherit"
+            aria-label="menu"
+            sx={{ mr: 2 }}
+          >
+            <MenuIcon />
+          </IconButton>
+          <Typography variant="h6" component={Link} to="/Bao_cao_thong_ke" sx={{ flexGrow: 1, color: 'inherit', textDecoration: 'none' }}>
+            Báo cáo thông kê
+          </Typography>
+          <Typography variant="h6" component={Link} to="/Quan_ly_khach_hang" sx={{ flexGrow: 1, color: 'inherit', textDecoration: 'none' }}>
+            Quản lý khách hàng
+          </Typography>
+          <Typography variant="h6" component={Link} to="/Quan_ly_nha_tro" sx={{ flexGrow: 1, color: 'inherit', textDecoration: 'none' }}>
+            Quản lý nhà trọ
+          </Typography>
+          <Typography variant="h6" component={Link} to="/Quan_ly_hoa_don" sx={{ flexGrow: 1, color: 'inherit', textDecoration: 'none' }}>
+            Quản lý hóa đơn
+          </Typography>
+          <Typography variant="h6" component={Link} to="/Quan_ly_dich_vu" sx={{ flexGrow: 1, color: 'inherit', textDecoration: 'none' }}>
+            Quản lý dịch vụ
+          </Typography>
+          <Typography variant="h6" component={Link} to="/Quan_ly_hop_dong" sx={{ flexGrow: 1, color: 'inherit', textDecoration: 'none' }}>
+            Quản lý hợp đồng
+          </Typography>
+          <Button color="inherit">Login</Button>
+        </Toolbar>
+      </AppBar>
+
+      <Routes>
+        <Route path='/Bao_cao_thong_ke' element={<ViewStatistics />} />
+        <Route path='/Quan_ly_khach_hang' element={<ManageCustomers />} />
+        <Route path='/Quan_ly_nha_tro' element={<HostelManagement />} />
+        <Route path='/Quan_ly_hoa_don' element={<InvoiceManagement />} />
+        <Route path='/Quan_ly_dich_vu' element={<ServiceManagement />} />
+        <Route path='/Quan_ly_hop_dongs' element={<ContractManagement />} />
+      </Routes>
+    </Box>
   )
 }
 
