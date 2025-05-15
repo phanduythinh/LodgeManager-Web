@@ -33,7 +33,7 @@ const initialRows = [
   createData('KH002', 'Nguyễn Văn B', 'Nữ', '14/01/2003', '0123345534', 'pdt1401@gmail.com', '0121232', 'Cổ nhuế 2', 'Nhà A', '02')
 ];
 
-function ManageCustomers() {
+function KhachHang() {
   const [rows, setRows] = React.useState(initialRows);
   const [open, setOpen] = React.useState(false);
   const [formData, setFormData] = React.useState({
@@ -206,4 +206,4 @@ function ManageCustomers() {
   )
 }
 
-export default ManageCustomers
+export default KhachHang
