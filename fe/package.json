@@ -15,9 +15,11 @@
     "@mui/icons-material": "^7.1.0",
     "@mui/material": "^7.1.0",
     "@toolpad/core": "^0.15.0",
+    "material-ui-confirm": "^3.0.9",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "react-router-dom": "^7.6.0"
+    "react-router-dom": "^7.6.0",
+    "sub-vn": "^0.0.2"
   },
   "devDependencies": {
     "@babel/eslint-parser": "^7.27.1",

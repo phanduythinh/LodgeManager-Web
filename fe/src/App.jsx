@@ -120,7 +120,7 @@ function DemoPageContent({ pathname }) {
             textAlign: 'center',
           }}
         >
-          <Typography>Không tìm thấy nội dung cho {pathname}</Typography>
+          <Typography>Xin chào Đại Ca</Typography>
         </Box>
       );
   }
@@ -135,7 +135,7 @@ DemoPageContent.propTypes = {
 function App(props) {
   const { window } = props;
 
-  const router = useDemoRouter('/dashboard');
+  const router = useDemoRouter('/');
 
   // Remove this const when copying and pasting into your project.
   const demoWindow = window !== undefined ? window() : undefined;
@@ -149,9 +149,12 @@ function App(props) {
         router={router}
         theme={theme}
         window={demoWindow}
+        title="Quản lý tòa nhà"
       >
         <DashboardLayout>
-          <DemoPageContent pathname={router.pathname} />
+          <Box>
+            <DemoPageContent pathname={router.pathname} />
+          </Box>
         </DashboardLayout>
       </AppProvider>
       {/* preview-end */}
@@ -160,10 +163,6 @@ function App(props) {
 }
 
 App.propTypes = {
-  /**
-   * Injected by the documentation to work in an iframe.
-   * Remove this when copying and pasting into your project.
-   */
   window: PropTypes.func,
 };
 
