@@ -106,7 +106,7 @@ function ToaNha() {
 
     requiredFields.forEach(field => {
       if (!formData[field] || formData[field].trim() === '') {
-        newErrors[field] = 'Không được bỏ trống trường này';
+        newErrors[field] = 'Thông tin bắt buộc';
       }
     });
 

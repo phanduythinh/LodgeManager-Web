@@ -1,22 +1,25 @@
-import * as React from 'react';
-import PhiDichVu from './pages/DanhMucDuLieu/PhiDichVu';
-import Phong from './pages/DanhMucDuLieu/Phong';
-import ToaNha from './pages/DanhMucDuLieu/ToaNha';
-import HopDong from './pages/KhachHang/HopDong';
-import KhachHang from './pages/KhachHang/KhachHang';
+import * as React from 'react'
+import PhiDichVu from './pages/DanhMucDuLieu/PhiDichVu'
+import Phong from './pages/DanhMucDuLieu/Phong'
+import ToaNha from './pages/DanhMucDuLieu/ToaNha'
+import HopDong from './pages/KhachHang/HopDong'
+import KhachHang from './pages/KhachHang/KhachHang'
 
-import PropTypes from 'prop-types';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import DashboardIcon from '@mui/icons-material/Dashboard';
-import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
-import BarChartIcon from '@mui/icons-material/BarChart';
-import DescriptionIcon from '@mui/icons-material/Description';
-import LayersIcon from '@mui/icons-material/Layers';
-import { AppProvider } from '@toolpad/core/AppProvider';
-import { DashboardLayout } from '@toolpad/core/DashboardLayout';
-import { DemoProvider, useDemoRouter } from '@toolpad/core/internal';
-import theme from './theme';
+import PropTypes from 'prop-types'
+import Box from '@mui/material/Box'
+import Typography from '@mui/material/Typography'
+import DashboardIcon from '@mui/icons-material/Dashboard'
+import BarChartIcon from '@mui/icons-material/BarChart'
+import DescriptionIcon from '@mui/icons-material/Description'
+import { AppProvider } from '@toolpad/core/AppProvider'
+import { DashboardLayout } from '@toolpad/core/DashboardLayout'
+import { DemoProvider, useDemoRouter } from '@toolpad/core/internal'
+import theme from './theme'
+import HomeIcon from '@mui/icons-material/Home'
+import MeetingRoomIcon from '@mui/icons-material/MeetingRoom'
+import WaterDropIcon from '@mui/icons-material/WaterDrop'
+import PermIdentityIcon from '@mui/icons-material/PermIdentity'
+import GroupIcon from '@mui/icons-material/Group'
 
 const NAVIGATION = [
   {
@@ -31,24 +34,24 @@ const NAVIGATION = [
       {
         segment: 'ToaNha',
         title: 'Tòa nhà',
-        icon: <DescriptionIcon />,
+        icon: <HomeIcon />,
       },
       {
         segment: 'Phong',
         title: 'Phòng',
-        icon: <DescriptionIcon />,
+        icon: <MeetingRoomIcon />,
       },
       {
         segment: 'phiDichVu',
         title: 'Phí dịch vụ',
-        icon: <DescriptionIcon />,
+        icon: <WaterDropIcon />,
       }
     ],
   },
   {
     segment: 'KhachHang',
     title: 'Khách hàng',
-    icon: <ShoppingCartIcon />, children: [
+    icon: <PermIdentityIcon />, children: [
       {
         segment: 'HopDong',
         title: 'Hợp đồng',
@@ -57,7 +60,7 @@ const NAVIGATION = [
       {
         segment: 'KhachHang',
         title: 'Khách hàng',
-        icon: <DescriptionIcon />,
+        icon: <GroupIcon />,
       }
     ],
   },
