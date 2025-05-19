@@ -12,10 +12,11 @@ import Tooltip from '@mui/material/Tooltip'
 import DeleteIcon from '@mui/icons-material/Delete'
 import BorderColorIcon from '@mui/icons-material/BorderColor'
 import SearchIcon from '@mui/icons-material/Search'
-import { useConfirm } from "material-ui-confirm"
+import { useConfirm } from 'material-ui-confirm'
 import { getProvinces, getDistrictsByProvinceCode, getWardsByDistrictCode } from 'sub-vn'
+import { ToaNhaData } from '../../apis/mock-data'
 
-const StyledTableCell = styled(TableCell)(({ theme }) => ({
+const StyledTableCell = styled(TableCell)(() => ({
   [`&.${tableCellClasses.head}`]: {
     backgroundColor: '#a8d8fb',
     borderRight: '1px solid #e0e0e0'
@@ -23,132 +24,174 @@ const StyledTableCell = styled(TableCell)(({ theme }) => ({
   [`&.${tableCellClasses.body}`]: {
     fontSize: 14,
     borderRight: '1px solid #e0e0e0'
-  },
-}));
+  }
+}))
 
 const StyledTableRow = styled(TableRow)(({ theme }) => ({
   '&:nth-of-type(odd)': {
-    backgroundColor: theme.palette.action.hover,
+    backgroundColor: theme.palette.action.hover
   }
-}));
-
-// Fake data
-function createData(id, TenNha, SoPhong, DiaChiNha, TinhThanh, QuanHuyen, XaPhuong, TrangThai) {
-  return { id, TenNha, SoPhong, DiaChiNha, TinhThanh, QuanHuyen, XaPhuong, TrangThai };
-}
-
-const initialRows = [
-  createData('CH-001', 'Ben Hou', '5', '100 phố viên', 'Cổ nhuế 2', 'Băc từ liêm', 'Hà Nội', 'Hoạt động'),
-  createData('CH-002', 'Hom Tay', '4', '100 phố lạng', 'song lãng', 'vũ thư', 'thái bình', 'Không hoạt động')
-];
+}))
 
 function ToaNha() {
-  const [rows, setRows] = React.useState(initialRows);
-  const [open, setOpen] = React.useState(false);
+  const [rows, setRows] = React.useState(ToaNhaData || [])
+  const [open, setOpen] = React.useState(false)
   const [formData, setFormData] = React.useState({
     id: '', TenNha: '', SoPhong: '', DiaChiNha: '', TrangThai: 'Hoạt động',
     TinhThanh: '', QuanHuyen: '', XaPhuong: ''
-  });
-  const [errors, setErrors] = React.useState({});
-  const [editIndex, setEditIndex] = React.useState(null);
+  })
+  const [errors, setErrors] = React.useState({})
+  const [editId, setEditId] = React.useState(null)
   const [filterStatus, setFilterStatus] = React.useState(null)
 
-  // Mode dia chi 
-  const [provinces, setProvinces] = React.useState([]);
-  const [districts, setDistricts] = React.useState([]);
-  const [wards, setWards] = React.useState([]);
+  // Mode dia chi
+  const [provinces, setProvinces] = React.useState([])
+  const [districts, setDistricts] = React.useState([])
+  const [wards, setWards] = React.useState([])
+
+  const [searchKeyword, setSearchKeyword] = React.useState('')
 
   React.useEffect(() => {
-    setProvinces(getProvinces());
-  }, []);
+    setProvinces(getProvinces())
+  }, [])
 
-  const handleDelete = (id) => {
-    setRows(rows.filter(row => row.id !== id));
-  };
+  // Khi mở dialog sửa, set lại districts và wards theo TinhThanh và QuanHuyen hiện tại
+  const handleOpenEdit = (row) => {
+    setFormData(row)
+    setErrors({})
+    setEditId(row.id)
+    setOpen(true)
+
+    // Cập nhật districts theo TinhThanh hiện tại
+    if (row.TinhThanh) {
+      const province = getProvinces().find(p => p.name === row.TinhThanh)
+      if (province) {
+        const dsDistricts = getDistrictsByProvinceCode(province.code)
+        setDistricts(dsDistricts)
+
+        // Cập nhật wards theo QuanHuyen hiện tại
+        if (row.QuanHuyen) {
+          const district = dsDistricts.find(d => d.name === row.QuanHuyen)
+          if (district) {
+            setWards(getWardsByDistrictCode(district.code))
+          } else {
+            setWards([])
+          }
+        } else {
+          setWards([])
+        }
+      } else {
+        setDistricts([])
+        setWards([])
+      }
+    } else {
+      setDistricts([])
+      setWards([])
+    }
+  }
 
   const handleOpenAdd = () => {
     setFormData({
-      id: '', name: '', gender: '', dob: '', phone: '',
-      email: '', cccd: '', address: '', house: '', room: ''
-    });
-    setErrors({});
-    setEditIndex(null);
-    setOpen(true);
-  };
+      id: '',
+      TenNha: '',
+      SoPhong: '',
+      DiaChiNha: '',
+      TinhThanh: '',
+      QuanHuyen: '',
+      XaPhuong: '',
+      TrangThai: 'Không hoạt động' // Mặc định là không hoạt động
+    })
+    setErrors({})
+    setEditId(null)
+    setDistricts([])
+    setWards([])
+    setOpen(true)
+  }
 
-  const handleOpenEdit = (row, index) => {
-    setFormData(row);
-    setErrors({});
-    setEditIndex(index);
-    setOpen(true);
-  };
+  const handleDelete = (id) => {
+    setRows(rows.filter(row => row.id !== id))
+  }
 
-  const handleClose = () => setOpen(false);
+  const handleClose = () => setOpen(false)
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    const { name, value } = e.target
+    setFormData(prev => ({ ...prev, [name]: value }))
     if (value.trim() !== '') {
-      setErrors(prev => ({ ...prev, [name]: '' }));
+      setErrors(prev => ({ ...prev, [name]: '' }))
     }
-  };
+  }
 
   const handleAutoChange = (name, value) => {
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData(prev => ({ ...prev, [name]: value }))
     if (value.trim() !== '') {
-      setErrors(prev => ({ ...prev, [name]: '' }));
+      setErrors(prev => ({ ...prev, [name]: '' }))
     }
-  };
+  }
 
   const validateForm = () => {
-    const requiredFields = ['id', 'TenNha', 'SoPhong', 'DiaChiNha', 'TinhThanh', 'QuanHuyen', 'XaPhuong'];
-    const newErrors = {};
+    const requiredFields = ['id', 'TenNha', 'SoPhong', 'DiaChiNha', 'TinhThanh', 'QuanHuyen', 'XaPhuong']
+    const newErrors = {}
 
     requiredFields.forEach(field => {
       if (!formData[field] || formData[field].trim() === '') {
-        newErrors[field] = 'Thông tin bắt buộc';
+        newErrors[field] = 'Thông tin bắt buộc'
       }
-    });
+    })
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
 
   const handleSubmit = () => {
-    if (!validateForm()) return;
+    if (!validateForm()) return
 
-    const newData = { ...formData };
+    const newData = { ...formData }
 
-    if (editIndex === null) {
-      setRows([...rows, newData]);
+    if (editId === null) {
+      // Thêm mới: kiểm tra trùng id có thể thêm nếu muốn
+      setRows(prev => [...prev, newData])
     } else {
-      const updated = [...rows];
-      updated[editIndex] = newData;
-      setRows(updated);
+      // Sửa: tìm index trong rows bằng id rồi cập nhật
+      setRows(prev => {
+        const index = prev.findIndex(r => r.id === editId)
+        if (index === -1) return prev
+        const updated = [...prev]
+        updated[index] = newData
+        return updated
+      })
     }
-    setOpen(false);
-  };
+    setOpen(false)
+  }
 
   const status = [
     { title: 'Hoạt động' },
-    { title: 'Không hoạt động' },
+    { title: 'Không hoạt động' }
   ]
 
   const confirmDeleteToaNha = useConfirm()
   const hanhdleDeleteToaNha = (row) => {
     confirmDeleteToaNha({
       title: 'Xóa tòa nhà',
-      description: "Hành động này sẽ xóa vĩnh viễn dữ liệu về Tòa nhà của bạn! Bạn chắc chưa?",
-      confirmationText: 'Confirm',
-      cancellationText: 'Cancel'
+      description: 'Hành động này sẽ xóa vĩnh viễn dữ liệu về Tòa nhà của bạn! Bạn chắc chưa?',
+      confirmationText: 'Xóa',
+      cancellationText: 'Hủy'
     }).then(() => {
       handleDelete(row.id)
     }).catch(() => { })
   }
 
-  const filteredRows = filterStatus
-    ? rows.filter(row => row.TrangThai === filterStatus)
-    : rows;
+  const filteredRows = Array.isArray(rows)
+    ? rows.filter(row => {
+      const matchesStatus = filterStatus ? row.TrangThai === filterStatus : true
+      const keyword = searchKeyword.toLowerCase()
+      const matchesSearch =
+        row.TenNha.toLowerCase().includes(keyword) ||
+        row.id.toLowerCase().includes(keyword) ||
+        row.DiaChiNha.toLowerCase().includes(keyword)
+      return matchesStatus && matchesSearch
+    })
+    : []
 
   return (
     <Box sx={{ m: 1 }}>
@@ -180,10 +223,10 @@ function ToaNha() {
             width: '45%',
             '& .MuiInputBase-root': {
               paddingTop: 0,
-              paddingBottom: 0,
+              paddingBottom: 0
             },
             '& .MuiFormLabel-root': {
-              top: -7.5, // tuỳ chỉnh nếu label bị lệch
+              top: -7.5 // tuỳ chỉnh nếu label bị lệch
             }
           }}
           renderInput={(params) => (
@@ -198,10 +241,12 @@ function ToaNha() {
               py: '7.5px'
             },
             '& .MuiFormLabel-root': {
-              top: -5,
+              top: -5
             }
           }}
-          placeholder="Tìm kiếm"
+          placeholder="Tìm kiếm theo tên, mã hoặc địa chỉ"
+          value={searchKeyword}
+          onChange={(e) => setSearchKeyword(e.target.value)}
           InputProps={{
             startAdornment: (
               <SearchIcon fontSize='small' sx={{ mr: 1 }} />
@@ -212,7 +257,7 @@ function ToaNha() {
 
       {/* Dialog Thêm/Sửa */}
       <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
-        <DialogTitle>{editIndex === null ? 'Thêm tòa nhà' : 'Sửa tòa nhà'}</DialogTitle>
+        <DialogTitle sx={{ bgcolor: '#EEEEEE', py: 1 }}>{editId === null ? 'Thêm tòa nhà' : 'Sửa tòa nhà'}</DialogTitle>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
 
           <Box>
@@ -222,34 +267,20 @@ function ToaNha() {
                 <TextField
                   label="Tên tòa nhà (*)"
                   fullWidth
-                  value={formData.TenNha}
+                  value={formData.TenNha || ''}
                   name="TenNha"
                   onChange={handleChange}
                   error={!!errors.TenNha}
                   helperText={errors.TenNha}
                 />
               </Grid>
-              {/* Phân này chỉnh sau khi làm qly phong */}
-              <Grid item xs={6}>
-                <TextField
-                  label="Số phòng (*)"
-                  fullWidth
-                  value={formData.SoPhong}
-                  name="SoPhong"
-                  onChange={handleChange}
-                  error={!!errors.SoPhong}
-                  helperText={errors.SoPhong}
-                />
-              </Grid>
               <Grid item xs={6}>
                 <TextField
                   label="Tên viết tắt/Mã tòa (*)"
                   fullWidth
-                  value={formData.id}
+                  value={formData.id || ''}
                   name="id"
                   onChange={handleChange}
-                  error={!!errors.id}
-                  helperText={errors.id}
                 />
               </Grid>
             </Grid>
@@ -257,49 +288,54 @@ function ToaNha() {
 
           <Box>
             <strong>Thông tin địa chỉ</strong>
-            <Grid container spacing={2} mt={1}>
-              <Grid item xs={4}>
-                <Autocomplete
-                  options={provinces}
-                  getOptionLabel={(option) => option.name}
-                  value={provinces.find(p => p.name === formData.TinhThanh) || null}
-                  onChange={(e, value) => {
-                    handleAutoChange('TinhThanh', value?.name || '');
-                    setDistricts(value ? getDistrictsByProvinceCode(value.code) : []);
-                    setFormData(prev => ({ ...prev, QuanHuyen: '', XaPhuong: '' }));
-                    setWards([]);
-                  }}
-                  renderInput={(params) => (
-                    <TextField {...params} label="Tỉnh/Thành phố (*)" error={!!errors.TinhThanh} helperText={errors.TinhThanh} />
-                  )}
-                />
-              </Grid>
-              <Grid item xs={4}>
-                <Autocomplete
-                  options={districts}
-                  getOptionLabel={(option) => option.name}
-                  value={districts.find(d => d.name === formData.QuanHuyen) || null}
-                  onChange={(e, value) => {
-                    handleAutoChange('QuanHuyen', value?.name || '');
-                    setWards(value ? getWardsByDistrictCode(value.code) : []);
-                    setFormData(prev => ({ ...prev, XaPhuong: '' }));
-                  }}
-                  renderInput={(params) => (
-                    <TextField {...params} label="Quận/Huyện (*)" error={!!errors.QuanHuyen} helperText={errors.QuanHuyen} />
-                  )}
-                />
-              </Grid>
-              <Grid item xs={4}>
-                <Autocomplete
-                  options={wards}
-                  getOptionLabel={(option) => option.name}
-                  value={wards.find(w => w.name === formData.XaPhuong) || null}
-                  onChange={(e, value) => handleAutoChange('XaPhuong', value?.name || '')}
-                  renderInput={(params) => (
-                    <TextField {...params} label="Xã/Phường (*)" error={!!errors.XaPhuong} helperText={errors.XaPhuong} />
-                  )}
-                />
-              </Grid>
+            <Grid container spacing={2} mt={1} sx={{ display: 'flex', flexDirection: 'column' }}>
+              <Box sx={{ display: 'flex', gap: 1, justifyContent: 'space-between  ' }}>
+                <Grid
+                  item xs={4}
+                  sx={{ width: 'calc(538px / 3)' }}>
+                  <Autocomplete
+                    options={provinces}
+                    getOptionLabel={(option) => option.name}
+                    value={provinces.find(p => p.name === formData.TinhThanh) || null}
+                    onChange={(e, value) => {
+                      handleAutoChange('TinhThanh', value?.name || '')
+                      setDistricts(value ? getDistrictsByProvinceCode(value.code) : [])
+                      setFormData(prev => ({ ...prev, QuanHuyen: '', XaPhuong: '' }))
+                      setWards([])
+                    }}
+                    renderInput={(params) => (
+                      <TextField {...params} label="Tỉnh/Thành phố (*)" error={!!errors.TinhThanh} helperText={errors.TinhThanh} />
+                    )}
+                  />
+                </Grid>
+                <Grid item xs={4} sx={{ width: 'calc(538px / 3)' }}>
+                  <Autocomplete
+                    options={districts}
+                    getOptionLabel={(option) => option.name}
+                    value={districts.find(d => d.name === formData.QuanHuyen) || null}
+                    onChange={(e, value) => {
+                      handleAutoChange('QuanHuyen', value?.name || '')
+                      setWards(value ? getWardsByDistrictCode(value.code) : [])
+                      setFormData(prev => ({ ...prev, XaPhuong: '' }))
+                    }}
+                    renderInput={(params) => (
+                      <TextField {...params} label="Quận/Huyện (*)" error={!!errors.QuanHuyen} helperText={errors.QuanHuyen} />
+                    )}
+                  />
+                </Grid>
+                <Grid item xs={4} sx={{ width: 'calc(538px / 3)' }}>
+                  <Autocomplete
+                    options={wards}
+                    getOptionLabel={(option) => option.name}
+                    value={wards.find(w => w.name === formData.XaPhuong) || null}
+                    onChange={(e, value) => handleAutoChange('XaPhuong', value?.name || '')}
+                    renderInput={(params) => (
+                      <TextField {...params} label="Xã/Phường (*)" error={!!errors.XaPhuong} helperText={errors.XaPhuong} />
+                    )}
+                  />
+                </Grid>
+              </Box>
+
               <Grid item xs={12}>
                 <TextField
                   label="Địa chỉ chi tiết (*)"
@@ -308,6 +344,8 @@ function ToaNha() {
                   value={formData.DiaChiNha || ''}
                   onChange={handleChange}
                   placeholder="91 Nguyễn Chí Thanh"
+                  error={!!errors.DiaChiNha}
+                  helperText={errors.DiaChiNha}
                 />
               </Grid>
               <Grid item xs={12}>
@@ -323,13 +361,13 @@ function ToaNha() {
               </Grid>
             </Grid>
           </Box>
-        </DialogContent>
+        </DialogContent >
 
         <DialogActions>
           <Button onClick={handleClose}>Hủy</Button>
           <Button onClick={handleSubmit} variant="contained">Lưu</Button>
         </DialogActions>
-      </Dialog>
+      </Dialog >
 
 
       <TableContainer component={Paper} sx={{ marginTop: '16px' }}>
@@ -345,11 +383,11 @@ function ToaNha() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredRows.map((row, index) => (
+            {(filteredRows || []).map((row) => (
               <StyledTableRow key={row.id}>
                 <StyledTableCell sx={{ p: '8px' }}>{row.id}</StyledTableCell>
                 <StyledTableCell sx={{ p: '8px' }}>{row.TenNha}</StyledTableCell>
-                <StyledTableCell sx={{ p: '8px' }}>{row.SoPhong}</StyledTableCell>
+                <StyledTableCell sx={{ p: '8px' }}>{Array.isArray(row.Phongs) ? row.Phongs.length : 0}</StyledTableCell>
                 <StyledTableCell sx={{ p: '8px' }}>
                   {`${row.DiaChiNha}, ${row.XaPhuong}, ${row.QuanHuyen}, ${row.TinhThanh}`}
                 </StyledTableCell>
@@ -360,7 +398,7 @@ function ToaNha() {
                       <Button
                         variant="contained"
                         sx={{ bgcolor: '#828688' }}
-                        onClick={() => handleOpenEdit(row, index)}
+                        onClick={() => handleOpenEdit(row)}
                       >
                         <BorderColorIcon fontSize='small' />
                       </Button>
@@ -381,7 +419,7 @@ function ToaNha() {
           </TableBody>
         </Table>
       </TableContainer>
-    </Box>
+    </Box >
   )
 }
 

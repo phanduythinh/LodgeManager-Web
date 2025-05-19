@@ -20,11 +20,12 @@ import MeetingRoomIcon from '@mui/icons-material/MeetingRoom'
 import WaterDropIcon from '@mui/icons-material/WaterDrop'
 import PermIdentityIcon from '@mui/icons-material/PermIdentity'
 import GroupIcon from '@mui/icons-material/Group'
+import { ToaNhaData } from './apis/mock-data'
 
 const NAVIGATION = [
   {
     kind: 'header',
-    title: 'QUẢN LÝ & VẬN HÀNH',
+    title: 'QUẢN LÝ & VẬN HÀNH'
   },
   {
     segment: 'DanhMucDuLieu',
@@ -34,19 +35,19 @@ const NAVIGATION = [
       {
         segment: 'ToaNha',
         title: 'Tòa nhà',
-        icon: <HomeIcon />,
+        icon: <HomeIcon />
       },
       {
         segment: 'Phong',
         title: 'Phòng',
-        icon: <MeetingRoomIcon />,
+        icon: <MeetingRoomIcon />
       },
       {
         segment: 'phiDichVu',
         title: 'Phí dịch vụ',
-        icon: <WaterDropIcon />,
+        icon: <WaterDropIcon />
       }
-    ],
+    ]
   },
   {
     segment: 'KhachHang',
@@ -55,21 +56,21 @@ const NAVIGATION = [
       {
         segment: 'HopDong',
         title: 'Hợp đồng',
-        icon: <DescriptionIcon />,
+        icon: <DescriptionIcon />
       },
       {
         segment: 'KhachHang',
         title: 'Khách hàng',
-        icon: <GroupIcon />,
+        icon: <GroupIcon />
       }
-    ],
+    ]
   },
   {
-    kind: 'divider',
+    kind: 'divider'
   },
   {
     kind: 'header',
-    title: 'Báo cáo',
+    title: 'Báo cáo'
   },
   {
     segment: 'BaoCaoTaiChinh',
@@ -79,69 +80,69 @@ const NAVIGATION = [
       {
         segment: 'sales',
         title: 'Sales',
-        icon: <DescriptionIcon />,
+        icon: <DescriptionIcon />
       },
       {
         segment: 'traffic',
         title: 'Traffic',
-        icon: <DescriptionIcon />,
-      },
-    ],
+        icon: <DescriptionIcon />
+      }
+    ]
   }
-];
+]
 
 function DemoPageContent({ pathname }) {
-  let content;
+  let content
 
   switch (pathname) {
-    case '/DanhMucDuLieu/ToaNha':
-      content = <ToaNha />;
-      break;
-    case '/DanhMucDuLieu/Phong':
-      content = <Phong />;
-      break;
-    case '/DanhMucDuLieu/phiDichVu':
-      content = <PhiDichVu />;
-      break;
-    case '/KhachHang/HopDong':
-      content = <HopDong />;
-      break;
-    case '/KhachHang/KhachHang':
-      content = <KhachHang />;
-      break;
-    // case '/reports/traffic':
-    //   content = <ViewStatistics />;
-    //   break;
-    default:
-      content = (
-        <Box
-          sx={{
-            py: 4,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            textAlign: 'center',
-          }}
-        >
-          <Typography>Xin chào Đại Ca</Typography>
-        </Box>
-      );
+  case '/DanhMucDuLieu/ToaNha':
+    content = <ToaNha ToaNhaData={ToaNhaData}/>
+    break
+  case '/DanhMucDuLieu/Phong':
+    content = <Phong />
+    break
+  case '/DanhMucDuLieu/phiDichVu':
+    content = <PhiDichVu />
+    break
+  case '/KhachHang/HopDong':
+    content = <HopDong />
+    break
+  case '/KhachHang/KhachHang':
+    content = <KhachHang />
+    break
+  // case '/reports/traffic':
+  //   content = <ViewStatistics />;
+  //   break;
+  default:
+    content = (
+      <Box
+        sx={{
+          py: 4,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          textAlign: 'center'
+        }}
+      >
+        <Typography>Xin chào Đại Ca</Typography>
+      </Box>
+    )
   }
 
-  return content;
+  return content
 }
 
 DemoPageContent.propTypes = {
-  pathname: PropTypes.string.isRequired,
-};
+  pathname: PropTypes.string.isRequired
+}
 
 function App(props) {
-  const { window } = props;
+  const { window } = props
 
-  const router = useDemoRouter('/');
+  const router = useDemoRouter('/')
 
   // Remove this const when copying and pasting into your project.
-  const demoWindow = window !== undefined ? window() : undefined;
+  const demoWindow = window !== undefined ? window() : undefined
 
   return (
     // Remove this provider when copying and pasting into your project.
@@ -162,11 +163,11 @@ function App(props) {
       </AppProvider>
       {/* preview-end */}
     </DemoProvider>
-  );
+  )
 }
 
 App.propTypes = {
-  window: PropTypes.func,
-};
+  window: PropTypes.func
+}
 
 export default App
