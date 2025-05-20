@@ -279,7 +279,7 @@ function ToaNha() {
             top: -5
           }
         }}
-        placeholder="Tìm kiếm theo mã phòng, tên phòng, tòa nhà..."
+        placeholder="Tìm kiếm theo mã phòng, tên phòng"
         value={searchText}
         onChange={(e) => setSearchText(e.target.value)}
         InputProps={{
@@ -436,11 +436,9 @@ function ToaNha() {
             <TableRow>
               <StyledTableCell>Mã phòng</StyledTableCell>
               <StyledTableCell>Tên phòng</StyledTableCell>
-              <StyledTableCell>Tòa nhà</StyledTableCell>
-              <StyledTableCell>Tầng</StyledTableCell>
-              <StyledTableCell>Giá thuê</StyledTableCell>
-              <StyledTableCell>Đặt cọc</StyledTableCell>
-              <StyledTableCell>Diện tích</StyledTableCell>
+              <StyledTableCell align='right'>Giá thuê</StyledTableCell>
+              <StyledTableCell align='right'>Đặt cọc</StyledTableCell>
+              <StyledTableCell align='right'>Diện tích</StyledTableCell>
               <StyledTableCell>Số khách</StyledTableCell>
               <StyledTableCell>Trạng thái</StyledTableCell>
               <StyledTableCell>Tháo tác</StyledTableCell>
@@ -450,12 +448,14 @@ function ToaNha() {
             {filteredRows.map((row, index) => (
               <StyledTableRow key={row.MaPhong}>
                 <StyledTableCell>{row.MaPhong}</StyledTableCell>
-                <StyledTableCell>{row.TenPhong}</StyledTableCell>
-                <StyledTableCell>{row.MaNhaId}</StyledTableCell>
-                <StyledTableCell>{row.Tang}</StyledTableCell>
-                <StyledTableCell>{row.GiaThue}</StyledTableCell>
-                <StyledTableCell>{row.DatCoc}</StyledTableCell>
-                <StyledTableCell>{row.DienTich}m²</StyledTableCell>
+                <StyledTableCell>
+                  <Box>{row.TenPhong}</Box>
+                  <Box sx={{ color: '#B9B9C3' }}>Tòa nhà: {row.MaNhaId}</Box>
+                  <Box sx={{ color: '#B9B9C3' }}>Tầng: {row.Tang}</Box>
+                </StyledTableCell>
+                <StyledTableCell align='right'>{row.GiaThue}</StyledTableCell>
+                <StyledTableCell align='right'>{row.DatCoc}</StyledTableCell>
+                <StyledTableCell align='right'>{row.DienTich} m²</StyledTableCell>
                 <StyledTableCell>{row.SoKhachToiDa}</StyledTableCell>
                 <StyledTableCell>{row.TrangThai}</StyledTableCell>
                 <StyledTableCell sx={{ p: '8px' }} align='right'>
