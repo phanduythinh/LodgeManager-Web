@@ -95,38 +95,38 @@ function DemoPageContent({ pathname }) {
   let content
 
   switch (pathname) {
-  case '/DanhMucDuLieu/ToaNha':
-    content = <ToaNha ToaNhaData={ToaNhaData}/>
-    break
-  case '/DanhMucDuLieu/Phong':
-    content = <Phong />
-    break
-  case '/DanhMucDuLieu/phiDichVu':
-    content = <PhiDichVu />
-    break
-  case '/KhachHang/HopDong':
-    content = <HopDong />
-    break
-  case '/KhachHang/KhachHang':
-    content = <KhachHang />
-    break
-  // case '/reports/traffic':
-  //   content = <ViewStatistics />;
-  //   break;
-  default:
-    content = (
-      <Box
-        sx={{
-          py: 4,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          textAlign: 'center'
-        }}
-      >
-        <Typography>Xin chào Đại Ca</Typography>
-      </Box>
-    )
+    case '/DanhMucDuLieu/ToaNha':
+      content = <ToaNha ToaNhaData={ToaNhaData} />
+      break
+    case '/DanhMucDuLieu/Phong':
+      content = <Phong />
+      break
+    case '/DanhMucDuLieu/phiDichVu':
+      content = <PhiDichVu />
+      break
+    case '/KhachHang/HopDong':
+      content = <HopDong />
+      break
+    case '/KhachHang/KhachHang':
+      content = <KhachHang />
+      break
+    // case '/reports/traffic':
+    //   content = <ViewStatistics />;
+    //   break;
+    default:
+      content = (
+        <Box
+          sx={{
+            py: 4,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            textAlign: 'center'
+          }}
+        >
+          <Typography>Xin chào Đại Ca</Typography>
+        </Box>
+      )
   }
 
   return content
@@ -149,13 +149,19 @@ function App(props) {
     <DemoProvider window={demoWindow}>
       {/* preview-start */}
       <AppProvider
+
         navigation={NAVIGATION}
         router={router}
         theme={theme}
         window={demoWindow}
         title="Quản lý tòa nhà"
       >
-        <DashboardLayout>
+        <DashboardLayout
+          sx={{
+            '& .toolpad-demo-app-9z93tp': { display: 'none !important' },
+            '& .MuiTypography-h6': { display: 'none !important' }
+          }}
+        >
           <Box>
             <DemoPageContent pathname={router.pathname} />
           </Box>
