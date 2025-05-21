@@ -22,13 +22,14 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-// API Routes
-Route::apiResource('owners', OwnerController::class);
-Route::apiResource('customers', CustomerController::class);
-Route::apiResource('buildings', BuildingController::class);
-Route::apiResource('rooms', RoomController::class);
-Route::apiResource('invoices', InvoiceController::class);
-Route::apiResource('services', ServiceController::class);
-Route::apiResource('contracts', ContractController::class);
-Route::apiResource('legal-documents', LegalDocumentController::class);
-Route::apiResource('reports', ReportController::class);
+Route::middleware('auth:sanctum')->group(function () {
+    Route::apiResource('buildings', BuildingController::class);
+    Route::apiResource('rooms', RoomController::class);
+    Route::apiResource('contracts', ContractController::class);
+    Route::apiResource('customers', CustomerController::class);
+    Route::apiResource('invoices', InvoiceController::class);
+    Route::apiResource('owners', OwnerController::class);
+    Route::apiResource('services', ServiceController::class);
+    Route::apiResource('legal-documents', LegalDocumentController::class);
+    Route::apiResource('reports', ReportController::class);
+});
