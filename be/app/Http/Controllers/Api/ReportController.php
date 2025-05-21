@@ -3,70 +3,55 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\ReportRequest;
+use App\Http\Resources\ReportResource;
 use App\Models\Report;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Http\Response;
 
 class ReportController extends Controller
 {
-    public function index()
+    /**
+     * Display a listing of the resource.
+     */
+    public function index(): AnonymousResourceCollection
     {
-        $reports = Report::all();
-        return response()->json($reports);
+        $reports = Report::with('building')->paginate(10);
+        return ReportResource::collection($reports);
     }
 
-    public function store(Request $request)
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store(ReportRequest $request): ReportResource
     {
-        $validator = Validator::make($request->all(), [
-            'MaBaoCao' => 'required|string|unique:reports',
-            'DoanhThu' => 'required|numeric',
-            'LoiNhuan' => 'required|numeric',
-            'SoNguoiThue' => 'required|integer',
-            'SoNhaTro' => 'required|integer',
-            'SoPhongTrong' => 'required|integer',
-            'MaChuTro' => 'required|string|exists:owners,MaChuTro',
-            'MaHopDong' => 'nullable|string|exists:contracts,MaHopDong'
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
-
-        $report = Report::create($request->all());
-        return response()->json($report, 201);
+        $report = Report::create($request->validated());
+        return new ReportResource($report);
     }
 
-    public function show($id)
+    /**
+     * Display the specified resource.
+     */
+    public function show(Report $report): ReportResource
     {
-        $report = Report::findOrFail($id);
-        return response()->json($report);
+        return new ReportResource($report->load('building'));
     }
 
-    public function update(Request $request, $id)
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(ReportRequest $request, Report $report): ReportResource
     {
-        $validator = Validator::make($request->all(), [
-            'DoanhThu' => 'numeric',
-            'LoiNhuan' => 'numeric',
-            'SoNguoiThue' => 'integer',
-            'SoNhaTro' => 'integer',
-            'SoPhongTrong' => 'integer',
-            'MaChuTro' => 'string|exists:owners,MaChuTro',
-            'MaHopDong' => 'nullable|string|exists:contracts,MaHopDong'
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
-
-        $report = Report::findOrFail($id);
-        $report->update($request->all());
-        return response()->json($report);
+        $report->update($request->validated());
+        return new ReportResource($report);
     }
 
-    public function destroy($id)
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(Report $report): Response
     {
-        $report = Report::findOrFail($id);
         $report->delete();
-        return response()->json(null, 204);
+        return response()->noContent();
     }
 }
