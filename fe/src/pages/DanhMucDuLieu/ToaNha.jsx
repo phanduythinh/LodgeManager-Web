@@ -374,12 +374,12 @@ function ToaNha() {
         <Table sx={{ minWidth: 700 }} aria-label="customized table">
           <TableHead>
             <TableRow>
-              <StyledTableCell>Mã</StyledTableCell>
+              <StyledTableCell>Mã tòa nhà</StyledTableCell>
               <StyledTableCell>Tên tòa nhà</StyledTableCell>
               <StyledTableCell>Số phòng</StyledTableCell>
               <StyledTableCell>Địa chỉ</StyledTableCell>
               <StyledTableCell>Trạng thái</StyledTableCell>
-              <StyledTableCell>Tháo tác</StyledTableCell>
+              <StyledTableCell align='center'>Tháo tác</StyledTableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -392,8 +392,8 @@ function ToaNha() {
                   {`${row.DiaChiNha}, ${row.XaPhuong}, ${row.QuanHuyen}, ${row.TinhThanh}`}
                 </StyledTableCell>
                 <StyledTableCell sx={{ p: '8px' }}>{row.TrangThai}</StyledTableCell>
-                <StyledTableCell sx={{ p: '8px' }} align='right'>
-                  <Box sx={{ display: 'flex', gap: 1 }}>
+                <StyledTableCell sx={{ p: '8px' }}>
+                  <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
                     <Tooltip title="Sửa">
                       <Button
                         variant="contained"

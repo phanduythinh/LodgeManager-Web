@@ -368,7 +368,7 @@ function PhiDichVu() {
               <StyledTableCell>Tên dịch vụ</StyledTableCell>
               <StyledTableCell>Loại dịch vụ</StyledTableCell>
               <StyledTableCell align='right'>Giá tiền</StyledTableCell>
-              <StyledTableCell>Thao tác</StyledTableCell>
+              <StyledTableCell align='center'>Thao tác</StyledTableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -378,8 +378,8 @@ function PhiDichVu() {
                 <StyledTableCell>{row.TenDichVu}</StyledTableCell>
                 <StyledTableCell>{row.LoaiDichVu}</StyledTableCell>
                 <StyledTableCell align='right'>{row.DonGia} {row.DonViTinh}</StyledTableCell>
-                <StyledTableCell sx={{ p: '8px' }} align='right'>
-                  <Box sx={{ display: 'flex', gap: 1 }}>
+                <StyledTableCell sx={{ p: '8px' }}>
+                  <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
                     <Tooltip title="Sửa">
                       <Button
                         variant="contained"

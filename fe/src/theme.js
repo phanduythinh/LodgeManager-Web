@@ -15,24 +15,24 @@ const theme = createTheme({
     },
   },
   components: {
-    MuiCssBaseline: {
-      styleOverrides: {
-      //   ':root': {
-      //     // Không chắc có tác dụng với Toolpad, nhưng vẫn để
-      //     '--Toolpad-navigation-drawer-width': '250px',
-      //   },
-        // Đây là phần quan trọng: ép các class mặc định của Toolpad drawer
-        // '.ToolpadNavigationDrawer-paper': {
-        //   width: '250px !important',
-        // },
-        '[class*="MuiDrawer-paper"]': {
-          width: '250px !important',
-        },
-        '.MuiDrawer-docked':{
-          width: '250px !important',
-        }
-      },
-    },
+    // MuiCssBaseline: {
+    //   styleOverrides: {
+    //     ':root': {
+    //       // Không chắc có tác dụng với Toolpad, nhưng vẫn để
+    //       '--Toolpad-navigation-drawer-width': '250px',
+    //     },
+    //     // Đây là phần quan trọng: ép các class mặc định của Toolpad drawer
+    //     '.ToolpadNavigationDrawer-paper': {
+    //       width: '250px !important',
+    //     },
+    //     '[class*="MuiDrawer-paper"]': {
+    //       width: '250px !important',
+    //     },
+    //     '.MuiDrawer-docked': {
+    //       width: '250px !important',
+    //     }
+    //   },
+    // },
   },
 });
 

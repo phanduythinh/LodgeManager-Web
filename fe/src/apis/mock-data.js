@@ -156,3 +156,19 @@ export const ToaNhaData = [
     ]
   }
 ]
+
+export const KhachHang = [
+  {
+    MaKhachHang: 'KH-001',
+    HoTen: 'Nguyễn Văn A',
+    SoDienThoai: '0123456789',
+    Email: 'nguyenvana@gmail.com',
+    CCCD: '0342000012345',
+    GioiTinh: 'Nam',
+    NgaySinh: '11/11/1111',
+    DiaChiNha: 'Thôn Ba',
+    XaPhuong: 'Song Lãng',
+    QuanHuyen: 'Vũ Thư',
+    TinhThanh: 'Thái Bình',
+  }
+]

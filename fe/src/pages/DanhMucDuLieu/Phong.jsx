@@ -441,7 +441,7 @@ function ToaNha() {
               <StyledTableCell align='right'>Diện tích</StyledTableCell>
               <StyledTableCell>Số khách</StyledTableCell>
               <StyledTableCell>Trạng thái</StyledTableCell>
-              <StyledTableCell>Tháo tác</StyledTableCell>
+              <StyledTableCell align='center'>Tháo tác</StyledTableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -458,8 +458,8 @@ function ToaNha() {
                 <StyledTableCell align='right'>{row.DienTich} m²</StyledTableCell>
                 <StyledTableCell>{row.SoKhachToiDa}</StyledTableCell>
                 <StyledTableCell>{row.TrangThai}</StyledTableCell>
-                <StyledTableCell sx={{ p: '8px' }} align='right'>
-                  <Box sx={{ display: 'flex', gap: 1 }}>
+                <StyledTableCell sx={{ p: '8px' }}>
+                  <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
                     <Tooltip title="Sửa">
                       <Button
                         variant="contained"
