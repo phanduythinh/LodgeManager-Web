@@ -15,7 +15,7 @@ class InvoicePolicy
      */
     public function viewAny(User $user): bool
     {
-        return true; // Tất cả người dùng đã đăng nhập có thể xem danh sách hóa đơn
+        return $user->hasAnyRole(['admin', 'manager', 'staff']);
     }
 
     /**
@@ -23,7 +23,19 @@ class InvoicePolicy
      */
     public function view(User $user, Invoice $invoice): bool
     {
-        return true; // Tất cả người dùng đã đăng nhập có thể xem chi tiết hóa đơn
+        if ($user->hasRole('admin')) {
+            return true;
+        }
+
+        if ($user->hasRole('manager')) {
+            return true;
+        }
+
+        if ($user->hasRole('staff')) {
+            return $invoice->status !== 'cancelled';
+        }
+
+        return false;
     }
 
     /**
@@ -31,7 +43,7 @@ class InvoicePolicy
      */
     public function create(User $user): bool
     {
-        return $user->hasRole('admin') || $user->hasRole('manager'); // Chỉ admin và manager có thể tạo hóa đơn mới
+        return $user->hasAnyRole(['admin', 'manager']);
     }
 
     /**
@@ -39,7 +51,15 @@ class InvoicePolicy
      */
     public function update(User $user, Invoice $invoice): bool
     {
-        return $user->hasRole('admin') || $user->hasRole('manager'); // Chỉ admin và manager có thể cập nhật hóa đơn
+        if ($user->hasRole('admin')) {
+            return true;
+        }
+
+        if ($user->hasRole('manager')) {
+            return $invoice->status === 'draft' || $invoice->status === 'pending';
+        }
+
+        return false;
     }
 
     /**
@@ -47,7 +67,15 @@ class InvoicePolicy
      */
     public function delete(User $user, Invoice $invoice): bool
     {
-        return $user->hasRole('admin'); // Chỉ admin có thể xóa hóa đơn
+        if ($user->hasRole('admin')) {
+            return true;
+        }
+
+        if ($user->hasRole('manager')) {
+            return $invoice->status === 'draft' || $invoice->status === 'cancelled';
+        }
+
+        return false;
     }
 
     /**
@@ -55,7 +83,7 @@ class InvoicePolicy
      */
     public function restore(User $user, Invoice $invoice): bool
     {
-        return $user->hasRole('admin'); // Chỉ admin có thể khôi phục hóa đơn đã xóa
+        return $user->hasRole('admin');
     }
 
     /**
@@ -63,22 +91,70 @@ class InvoicePolicy
      */
     public function forceDelete(User $user, Invoice $invoice): bool
     {
-        return $user->hasRole('admin'); // Chỉ admin có thể xóa vĩnh viễn hóa đơn
+        return $user->hasRole('admin') && $invoice->status === 'cancelled';
     }
 
     /**
-     * Determine whether the user can mark invoice as paid.
+     * Determine whether the user can manage invoice payments.
      */
-    public function markAsPaid(User $user, Invoice $invoice): bool
+    public function managePayments(User $user, Invoice $invoice): bool
     {
-        return $user->hasRole('admin') || $user->hasRole('manager'); // Chỉ admin và manager có thể đánh dấu hóa đơn đã thanh toán
+        return $user->hasAnyRole(['admin', 'manager']);
     }
 
     /**
-     * Determine whether the user can cancel invoice.
+     * Determine whether the user can view invoice history.
+     */
+    public function viewHistory(User $user, Invoice $invoice): bool
+    {
+        return $user->hasAnyRole(['admin', 'manager']);
+    }
+
+    /**
+     * Determine whether the user can manage invoice documents.
+     */
+    public function manageDocuments(User $user, Invoice $invoice): bool
+    {
+        return $user->hasAnyRole(['admin', 'manager']);
+    }
+
+    /**
+     * Determine whether the user can cancel the invoice.
      */
     public function cancel(User $user, Invoice $invoice): bool
     {
-        return $user->hasRole('admin') || $user->hasRole('manager'); // Chỉ admin và manager có thể hủy hóa đơn
+        if ($user->hasRole('admin')) {
+            return true;
+        }
+
+        if ($user->hasRole('manager')) {
+            return $invoice->status === 'pending' || $invoice->status === 'draft';
+        }
+
+        return false;
+    }
+
+    /**
+     * Determine whether the user can void the invoice.
+     */
+    public function void(User $user, Invoice $invoice): bool
+    {
+        return $user->hasRole('admin') && $invoice->status === 'paid';
+    }
+
+    /**
+     * Determine whether the user can send payment reminders.
+     */
+    public function sendReminders(User $user, Invoice $invoice): bool
+    {
+        return $user->hasAnyRole(['admin', 'manager']) && $invoice->status === 'pending';
+    }
+
+    /**
+     * Determine whether the user can apply late payment fees.
+     */
+    public function applyLateFees(User $user, Invoice $invoice): bool
+    {
+        return $user->hasAnyRole(['admin', 'manager']) && $invoice->status === 'overdue';
     }
 }

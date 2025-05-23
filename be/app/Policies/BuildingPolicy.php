@@ -15,7 +15,7 @@ class BuildingPolicy
      */
     public function viewAny(User $user): bool
     {
-        return true; // Tất cả người dùng đã đăng nhập có thể xem danh sách tòa nhà
+        return $user->hasAnyRole(['admin', 'manager', 'staff']);
     }
 
     /**
@@ -23,7 +23,19 @@ class BuildingPolicy
      */
     public function view(User $user, Building $building): bool
     {
-        return true; // Tất cả người dùng đã đăng nhập có thể xem chi tiết tòa nhà
+        if ($user->hasRole('admin')) {
+            return true;
+        }
+
+        if ($user->hasRole('manager')) {
+            return true;
+        }
+
+        if ($user->hasRole('staff')) {
+            return $building->status !== 'inactive';
+        }
+
+        return false;
     }
 
     /**
@@ -31,7 +43,7 @@ class BuildingPolicy
      */
     public function create(User $user): bool
     {
-        return $user->hasRole('admin') || $user->hasRole('manager'); // Chỉ admin và manager có thể tạo tòa nhà mới
+        return $user->hasAnyRole(['admin', 'manager']);
     }
 
     /**
@@ -39,7 +51,15 @@ class BuildingPolicy
      */
     public function update(User $user, Building $building): bool
     {
-        return $user->hasRole('admin') || $user->hasRole('manager'); // Chỉ admin và manager có thể cập nhật tòa nhà
+        if ($user->hasRole('admin')) {
+            return true;
+        }
+
+        if ($user->hasRole('manager')) {
+            return $building->status !== 'inactive';
+        }
+
+        return false;
     }
 
     /**
@@ -47,7 +67,15 @@ class BuildingPolicy
      */
     public function delete(User $user, Building $building): bool
     {
-        return $user->hasRole('admin'); // Chỉ admin có thể xóa tòa nhà
+        if ($user->hasRole('admin')) {
+            return true;
+        }
+
+        if ($user->hasRole('manager')) {
+            return $building->status === 'inactive' && $building->rooms()->count() === 0;
+        }
+
+        return false;
     }
 
     /**
@@ -55,7 +83,7 @@ class BuildingPolicy
      */
     public function restore(User $user, Building $building): bool
     {
-        return $user->hasRole('admin'); // Chỉ admin có thể khôi phục tòa nhà đã xóa
+        return $user->hasRole('admin');
     }
 
     /**
@@ -63,6 +91,38 @@ class BuildingPolicy
      */
     public function forceDelete(User $user, Building $building): bool
     {
-        return $user->hasRole('admin'); // Chỉ admin có thể xóa vĩnh viễn tòa nhà
+        return $user->hasRole('admin') && $building->rooms()->count() === 0;
+    }
+
+    /**
+     * Determine whether the user can manage building services.
+     */
+    public function manageServices(User $user, Building $building): bool
+    {
+        return $user->hasAnyRole(['admin', 'manager']);
+    }
+
+    /**
+     * Determine whether the user can manage building maintenance.
+     */
+    public function manageMaintenance(User $user, Building $building): bool
+    {
+        return $user->hasAnyRole(['admin', 'manager', 'staff']);
+    }
+
+    /**
+     * Determine whether the user can view building reports.
+     */
+    public function viewReports(User $user, Building $building): bool
+    {
+        return $user->hasAnyRole(['admin', 'manager']);
+    }
+
+    /**
+     * Determine whether the user can manage building documents.
+     */
+    public function manageDocuments(User $user, Building $building): bool
+    {
+        return $user->hasAnyRole(['admin', 'manager']);
     }
 }

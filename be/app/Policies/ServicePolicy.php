@@ -15,7 +15,7 @@ class ServicePolicy
      */
     public function viewAny(User $user): bool
     {
-        return true; // Tất cả người dùng đã đăng nhập có thể xem danh sách dịch vụ
+        return $user->hasAnyRole(['admin', 'manager', 'staff']);
     }
 
     /**
@@ -23,7 +23,19 @@ class ServicePolicy
      */
     public function view(User $user, Service $service): bool
     {
-        return true; // Tất cả người dùng đã đăng nhập có thể xem chi tiết dịch vụ
+        if ($user->hasRole('admin')) {
+            return true;
+        }
+
+        if ($user->hasRole('manager')) {
+            return true;
+        }
+
+        if ($user->hasRole('staff')) {
+            return $service->status !== 'inactive';
+        }
+
+        return false;
     }
 
     /**
@@ -31,7 +43,7 @@ class ServicePolicy
      */
     public function create(User $user): bool
     {
-        return $user->hasRole('admin') || $user->hasRole('manager'); // Chỉ admin và manager có thể tạo dịch vụ mới
+        return $user->hasAnyRole(['admin', 'manager']);
     }
 
     /**
@@ -39,7 +51,15 @@ class ServicePolicy
      */
     public function update(User $user, Service $service): bool
     {
-        return $user->hasRole('admin') || $user->hasRole('manager'); // Chỉ admin và manager có thể cập nhật dịch vụ
+        if ($user->hasRole('admin')) {
+            return true;
+        }
+
+        if ($user->hasRole('manager')) {
+            return $service->status !== 'inactive';
+        }
+
+        return false;
     }
 
     /**
@@ -47,7 +67,15 @@ class ServicePolicy
      */
     public function delete(User $user, Service $service): bool
     {
-        return $user->hasRole('admin'); // Chỉ admin có thể xóa dịch vụ
+        if ($user->hasRole('admin')) {
+            return true;
+        }
+
+        if ($user->hasRole('manager')) {
+            return $service->status === 'inactive' && !$service->hasActiveContracts();
+        }
+
+        return false;
     }
 
     /**
@@ -55,7 +83,7 @@ class ServicePolicy
      */
     public function restore(User $user, Service $service): bool
     {
-        return $user->hasRole('admin'); // Chỉ admin có thể khôi phục dịch vụ đã xóa
+        return $user->hasRole('admin');
     }
 
     /**
@@ -63,14 +91,54 @@ class ServicePolicy
      */
     public function forceDelete(User $user, Service $service): bool
     {
-        return $user->hasRole('admin'); // Chỉ admin có thể xóa vĩnh viễn dịch vụ
+        return $user->hasRole('admin') && !$service->hasActiveContracts();
     }
 
     /**
-     * Determine whether the user can activate/deactivate the service.
+     * Determine whether the user can manage service pricing.
      */
-    public function toggleStatus(User $user, Service $service): bool
+    public function managePricing(User $user, Service $service): bool
     {
-        return $user->hasRole('admin') || $user->hasRole('manager'); // Chỉ admin và manager có thể kích hoạt/vô hiệu hóa dịch vụ
+        return $user->hasAnyRole(['admin', 'manager']);
+    }
+
+    /**
+     * Determine whether the user can manage service providers.
+     */
+    public function manageProviders(User $user, Service $service): bool
+    {
+        return $user->hasAnyRole(['admin', 'manager']);
+    }
+
+    /**
+     * Determine whether the user can view service history.
+     */
+    public function viewHistory(User $user, Service $service): bool
+    {
+        return $user->hasAnyRole(['admin', 'manager']);
+    }
+
+    /**
+     * Determine whether the user can manage service documents.
+     */
+    public function manageDocuments(User $user, Service $service): bool
+    {
+        return $user->hasAnyRole(['admin', 'manager']);
+    }
+
+    /**
+     * Determine whether the user can manage service inventory.
+     */
+    public function manageInventory(User $user, Service $service): bool
+    {
+        return $user->hasAnyRole(['admin', 'manager', 'staff']);
+    }
+
+    /**
+     * Determine whether the user can manage service maintenance.
+     */
+    public function manageMaintenance(User $user, Service $service): bool
+    {
+        return $user->hasAnyRole(['admin', 'manager', 'staff']);
     }
 }
