@@ -32,7 +32,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', [AuthController::class, 'user']);
     Route::post('/logout', [AuthController::class, 'logout']);
 
-    Route::apiResource('buildings', BuildingController::class);
+    // Route::apiResource('buildings', BuildingController::class); // Commented out for testing
     Route::apiResource('rooms', RoomController::class);
     Route::apiResource('contracts', ContractController::class);
     Route::apiResource('customers', CustomerController::class);
@@ -42,3 +42,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('legal-documents', LegalDocumentController::class);
     Route::apiResource('reports', ReportController::class);
 });
+
+// Test route
+Route::get('/test', function () {
+    return response()->json(['message' => 'API is working!']);
+});
+
+// Building routes - moved outside auth middleware for testing
+Route::apiResource('buildings', BuildingController::class);
