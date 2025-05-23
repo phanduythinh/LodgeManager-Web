@@ -15,7 +15,7 @@ class InvoicePolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasAnyRole(['admin', 'manager', 'staff']);
+        return true;
     }
 
     /**
@@ -23,19 +23,7 @@ class InvoicePolicy
      */
     public function view(User $user, Invoice $invoice): bool
     {
-        if ($user->hasRole('admin')) {
-            return true;
-        }
-
-        if ($user->hasRole('manager')) {
-            return true;
-        }
-
-        if ($user->hasRole('staff')) {
-            return $invoice->status !== 'cancelled';
-        }
-
-        return false;
+        return true;
     }
 
     /**
@@ -43,7 +31,7 @@ class InvoicePolicy
      */
     public function create(User $user): bool
     {
-        return $user->hasAnyRole(['admin', 'manager']);
+        return $user->hasRole('admin') || $user->hasRole('manager');
     }
 
     /**
@@ -51,15 +39,7 @@ class InvoicePolicy
      */
     public function update(User $user, Invoice $invoice): bool
     {
-        if ($user->hasRole('admin')) {
-            return true;
-        }
-
-        if ($user->hasRole('manager')) {
-            return $invoice->status === 'draft' || $invoice->status === 'pending';
-        }
-
-        return false;
+        return $user->hasRole('admin') || $user->hasRole('manager');
     }
 
     /**
@@ -67,15 +47,7 @@ class InvoicePolicy
      */
     public function delete(User $user, Invoice $invoice): bool
     {
-        if ($user->hasRole('admin')) {
-            return true;
-        }
-
-        if ($user->hasRole('manager')) {
-            return $invoice->status === 'draft' || $invoice->status === 'cancelled';
-        }
-
-        return false;
+        return $user->hasRole('admin');
     }
 
     /**
@@ -91,7 +63,7 @@ class InvoicePolicy
      */
     public function forceDelete(User $user, Invoice $invoice): bool
     {
-        return $user->hasRole('admin') && $invoice->status === 'cancelled';
+        return $user->hasRole('admin');
     }
 
     /**
@@ -156,5 +128,13 @@ class InvoicePolicy
     public function applyLateFees(User $user, Invoice $invoice): bool
     {
         return $user->hasAnyRole(['admin', 'manager']) && $invoice->status === 'overdue';
+    }
+
+    /**
+     * Determine whether the user can mark the invoice as paid.
+     */
+    public function markAsPaid(User $user, Invoice $invoice): bool
+    {
+        return $user->hasRole('admin') || $user->hasRole('manager');
     }
 }

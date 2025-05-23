@@ -15,7 +15,7 @@ class ServicePolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasAnyRole(['admin', 'manager', 'staff']);
+        return true;
     }
 
     /**
@@ -23,19 +23,7 @@ class ServicePolicy
      */
     public function view(User $user, Service $service): bool
     {
-        if ($user->hasRole('admin')) {
-            return true;
-        }
-
-        if ($user->hasRole('manager')) {
-            return true;
-        }
-
-        if ($user->hasRole('staff')) {
-            return $service->status !== 'inactive';
-        }
-
-        return false;
+        return true;
     }
 
     /**
@@ -43,7 +31,7 @@ class ServicePolicy
      */
     public function create(User $user): bool
     {
-        return $user->hasAnyRole(['admin', 'manager']);
+        return $user->hasRole('admin') || $user->hasRole('manager');
     }
 
     /**
@@ -51,15 +39,7 @@ class ServicePolicy
      */
     public function update(User $user, Service $service): bool
     {
-        if ($user->hasRole('admin')) {
-            return true;
-        }
-
-        if ($user->hasRole('manager')) {
-            return $service->status !== 'inactive';
-        }
-
-        return false;
+        return $user->hasRole('admin') || $user->hasRole('manager');
     }
 
     /**
@@ -67,15 +47,7 @@ class ServicePolicy
      */
     public function delete(User $user, Service $service): bool
     {
-        if ($user->hasRole('admin')) {
-            return true;
-        }
-
-        if ($user->hasRole('manager')) {
-            return $service->status === 'inactive' && !$service->hasActiveContracts();
-        }
-
-        return false;
+        return $user->hasRole('admin');
     }
 
     /**
@@ -91,7 +63,7 @@ class ServicePolicy
      */
     public function forceDelete(User $user, Service $service): bool
     {
-        return $user->hasRole('admin') && !$service->hasActiveContracts();
+        return $user->hasRole('admin');
     }
 
     /**

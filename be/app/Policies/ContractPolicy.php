@@ -15,7 +15,7 @@ class ContractPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasAnyRole(['admin', 'manager', 'staff']);
+        return true;
     }
 
     /**
@@ -23,19 +23,7 @@ class ContractPolicy
      */
     public function view(User $user, Contract $contract): bool
     {
-        if ($user->hasRole('admin')) {
-            return true;
-        }
-
-        if ($user->hasRole('manager')) {
-            return true;
-        }
-
-        if ($user->hasRole('staff')) {
-            return $contract->status !== 'inactive';
-        }
-
-        return false;
+        return true;
     }
 
     /**
@@ -43,7 +31,7 @@ class ContractPolicy
      */
     public function create(User $user): bool
     {
-        return $user->hasAnyRole(['admin', 'manager']);
+        return $user->hasRole('admin') || $user->hasRole('manager');
     }
 
     /**
@@ -51,15 +39,7 @@ class ContractPolicy
      */
     public function update(User $user, Contract $contract): bool
     {
-        if ($user->hasRole('admin')) {
-            return true;
-        }
-
-        if ($user->hasRole('manager')) {
-            return $contract->status !== 'inactive' && !$contract->isExpired();
-        }
-
-        return false;
+        return $user->hasRole('admin') || $user->hasRole('manager');
     }
 
     /**
@@ -67,15 +47,7 @@ class ContractPolicy
      */
     public function delete(User $user, Contract $contract): bool
     {
-        if ($user->hasRole('admin')) {
-            return true;
-        }
-
-        if ($user->hasRole('manager')) {
-            return $contract->status === 'inactive' && !$contract->hasActiveInvoices();
-        }
-
-        return false;
+        return $user->hasRole('admin');
     }
 
     /**
@@ -91,7 +63,7 @@ class ContractPolicy
      */
     public function forceDelete(User $user, Contract $contract): bool
     {
-        return $user->hasRole('admin') && !$contract->hasActiveInvoices();
+        return $user->hasRole('admin');
     }
 
     /**

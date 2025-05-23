@@ -15,7 +15,7 @@ class CustomerPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasAnyRole(['admin', 'manager', 'staff']);
+        return true;
     }
 
     /**
@@ -23,19 +23,7 @@ class CustomerPolicy
      */
     public function view(User $user, Customer $customer): bool
     {
-        if ($user->hasRole('admin')) {
-            return true;
-        }
-
-        if ($user->hasRole('manager')) {
-            return true;
-        }
-
-        if ($user->hasRole('staff')) {
-            return $customer->status !== 'inactive';
-        }
-
-        return false;
+        return true;
     }
 
     /**
@@ -43,7 +31,7 @@ class CustomerPolicy
      */
     public function create(User $user): bool
     {
-        return $user->hasAnyRole(['admin', 'manager']);
+        return $user->hasRole('admin') || $user->hasRole('manager');
     }
 
     /**
@@ -51,15 +39,7 @@ class CustomerPolicy
      */
     public function update(User $user, Customer $customer): bool
     {
-        if ($user->hasRole('admin')) {
-            return true;
-        }
-
-        if ($user->hasRole('manager')) {
-            return $customer->status !== 'inactive';
-        }
-
-        return false;
+        return $user->hasRole('admin') || $user->hasRole('manager');
     }
 
     /**
@@ -67,15 +47,7 @@ class CustomerPolicy
      */
     public function delete(User $user, Customer $customer): bool
     {
-        if ($user->hasRole('admin')) {
-            return true;
-        }
-
-        if ($user->hasRole('manager')) {
-            return $customer->status === 'inactive' && !$customer->hasActiveContracts();
-        }
-
-        return false;
+        return $user->hasRole('admin');
     }
 
     /**
@@ -91,7 +63,7 @@ class CustomerPolicy
      */
     public function forceDelete(User $user, Customer $customer): bool
     {
-        return $user->hasRole('admin') && !$customer->hasActiveContracts();
+        return $user->hasRole('admin');
     }
 
     /**

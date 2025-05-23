@@ -15,7 +15,7 @@ class RoomPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasAnyRole(['admin', 'manager', 'staff']);
+        return true;
     }
 
     /**
@@ -23,19 +23,7 @@ class RoomPolicy
      */
     public function view(User $user, Room $room): bool
     {
-        if ($user->hasRole('admin')) {
-            return true;
-        }
-
-        if ($user->hasRole('manager')) {
-            return true;
-        }
-
-        if ($user->hasRole('staff')) {
-            return $room->status !== 'inactive';
-        }
-
-        return false;
+        return true;
     }
 
     /**
@@ -43,7 +31,7 @@ class RoomPolicy
      */
     public function create(User $user): bool
     {
-        return $user->hasAnyRole(['admin', 'manager']);
+        return $user->hasRole('admin') || $user->hasRole('manager');
     }
 
     /**
@@ -51,15 +39,7 @@ class RoomPolicy
      */
     public function update(User $user, Room $room): bool
     {
-        if ($user->hasRole('admin')) {
-            return true;
-        }
-
-        if ($user->hasRole('manager')) {
-            return $room->status !== 'inactive';
-        }
-
-        return false;
+        return $user->hasRole('admin') || $user->hasRole('manager');
     }
 
     /**
@@ -67,15 +47,7 @@ class RoomPolicy
      */
     public function delete(User $user, Room $room): bool
     {
-        if ($user->hasRole('admin')) {
-            return true;
-        }
-
-        if ($user->hasRole('manager')) {
-            return $room->status === 'inactive' && !$room->hasActiveContract();
-        }
-
-        return false;
+        return $user->hasRole('admin');
     }
 
     /**
@@ -91,7 +63,7 @@ class RoomPolicy
      */
     public function forceDelete(User $user, Room $room): bool
     {
-        return $user->hasRole('admin') && !$room->hasActiveContract();
+        return $user->hasRole('admin');
     }
 
     /**
