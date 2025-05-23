@@ -12,6 +12,7 @@ import Tooltip from '@mui/material/Tooltip'
 import DeleteIcon from '@mui/icons-material/Delete'
 import BorderColorIcon from '@mui/icons-material/BorderColor'
 import SearchIcon from '@mui/icons-material/Search'
+import { ToaNhaData } from '../../apis/mock-data'
 import { useConfirm } from 'material-ui-confirm'
 
 const StyledTableCell = styled(TableCell)(() => ({
@@ -66,12 +67,10 @@ const PhiDichVus = [
   }
 ]
 
-const listToaNha = [...new Set(PhiDichVus.map(p => p.MaNhaId))].map(nha => ({ title: nha }))
-const listLoaiDichVu = [...new Set(PhiDichVus.map(p => p.LoaiDichVu))].map(ldv => ({ title: ldv }))
-const listDonViTinh = [...new Set(PhiDichVus.map(p => p.DonViTinh))].map(dvt => ({ title: dvt }))
+
 
 function PhiDichVu() {
-  const [rows, setRows] = React.useState(PhiDichVus)
+  const [rows, setRows] = React.useState(ToaNhaData)
   const [open, setOpen] = React.useState(false)
   const [formData, setFormData] = React.useState({
     MaDichVu: '',
@@ -181,6 +180,27 @@ function PhiDichVu() {
     return true
   })
 
+  const listToaNha = [...new Set(ToaNhaData.map(p => p.TenNha))].map(nha => ({ title: nha }))
+  const listLoaiDichVu = [
+    { title: 'Tiền điện' },
+    { title: 'Tiền nước' },
+    { title: 'Tiền vệ sinh' },
+    { title: 'Tiền internet' },
+    { title: 'Tiền phí quản lý' },
+    { title: 'Tiền gửi xe' },
+    { title: 'Tiền phí giặt sấy' }
+  ]
+  const listDonViTinh = [
+    { title: 'Người' },
+    { title: 'Phòng' },
+    { title: 'Kwh' },
+    { title: 'm³' },
+    { title: 'm²' },
+    { title: 'Xe' },
+    { title: 'Lượt/Lần' },
+    { title: 'Kg' },
+    { title: 'Giờ' }
+  ]
 
   return (
     <Box sx={{ m: 1 }}>
@@ -374,10 +394,10 @@ function PhiDichVu() {
           <TableBody>
             {filteredRows.map((row, index) => (
               <StyledTableRow key={row.MaDichVu}>
-                <StyledTableCell>{row.MaDichVu}</StyledTableCell>
-                <StyledTableCell>{row.TenDichVu}</StyledTableCell>
-                <StyledTableCell>{row.LoaiDichVu}</StyledTableCell>
-                <StyledTableCell align='right'>{row.DonGia} {row.DonViTinh}</StyledTableCell>
+                <StyledTableCell sx={{ p: '8px' }}>{row.MaDichVu}</StyledTableCell>
+                <StyledTableCell sx={{ p: '8px' }}>{row.TenDichVu}</StyledTableCell>
+                <StyledTableCell sx={{ p: '8px' }}>{row.LoaiDichVu}</StyledTableCell>
+                <StyledTableCell align='right' sx={{ p: '8px' }}>{row.DonGia} {row.DonViTinh}</StyledTableCell>
                 <StyledTableCell sx={{ p: '8px' }}>
                   <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
                     <Tooltip title="Sửa">

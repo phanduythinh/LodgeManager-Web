@@ -37,8 +37,8 @@ function ToaNha() {
   const [rows, setRows] = React.useState(ToaNhaData || [])
   const [open, setOpen] = React.useState(false)
   const [formData, setFormData] = React.useState({
-    id: '', TenNha: '', SoPhong: '', DiaChiNha: '', TrangThai: 'Hoạt động',
-    TinhThanh: '', QuanHuyen: '', XaPhuong: ''
+    MaNha: '', TenNha: '', SoPhong: '', DiaChiNha: '', TrangThai: 'Hoạt động',
+    TinhThanh: '', QuanHuyen: '', XaPhuong: '', Phongs: [], PhiDicuVus: []
   })
   const [errors, setErrors] = React.useState({})
   const [editId, setEditId] = React.useState(null)
@@ -59,7 +59,7 @@ function ToaNha() {
   const handleOpenEdit = (row) => {
     setFormData(row)
     setErrors({})
-    setEditId(row.id)
+    setEditId(row.MaNha)
     setOpen(true)
 
     // Cập nhật districts theo TinhThanh hiện tại
@@ -92,7 +92,7 @@ function ToaNha() {
 
   const handleOpenAdd = () => {
     setFormData({
-      id: '',
+      MaNha: '',
       TenNha: '',
       SoPhong: '',
       DiaChiNha: '',
@@ -108,8 +108,8 @@ function ToaNha() {
     setOpen(true)
   }
 
-  const handleDelete = (id) => {
-    setRows(rows.filter(row => row.id !== id))
+  const handleDelete = (maNha) => {
+    setRows(prev => prev.filter(row => row.MaNha !== maNha))
   }
 
   const handleClose = () => setOpen(false)
@@ -129,8 +129,8 @@ function ToaNha() {
     }
   }
 
-  const validateForm = () => {
-    const requiredFields = ['id', 'TenNha', 'SoPhong', 'DiaChiNha', 'TinhThanh', 'QuanHuyen', 'XaPhuong']
+  const validateForm = (isEdit = false) => {
+    const requiredFields = ['MaNha', 'TenNha', 'DiaChiNha', 'TinhThanh', 'QuanHuyen', 'XaPhuong']
     const newErrors = {}
 
     requiredFields.forEach(field => {
@@ -139,28 +139,34 @@ function ToaNha() {
       }
     })
 
+    // Kiểm tra trùng mã nhà khi thêm mới
+    if (!isEdit && formData.MaNha) {
+      if (ToaNhaData.some((toaNha) => toaNha.MaNha === formData.MaNha)) {
+        newErrors.MaNha = 'Mã nhà đã tồn tại'
+      }
+    }
+
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
 
   const handleSubmit = () => {
-    if (!validateForm()) return
+    if (!validateForm()) return;
 
-    const newData = { ...formData }
+    const newData = { ...formData };
 
     if (editId === null) {
-      // Thêm mới: kiểm tra trùng id có thể thêm nếu muốn
-      setRows(prev => [...prev, newData])
-    } else {
-      // Sửa: tìm index trong rows bằng id rồi cập nhật
+      // Thêm mới: có thể kiểm tra trùng MaNha nếu cần
       setRows(prev => {
-        const index = prev.findIndex(r => r.id === editId)
-        if (index === -1) return prev
-        const updated = [...prev]
-        updated[index] = newData
+        const updated = [...prev, { ...newData, Phongs: [], PhiDichVus: [] }]
+        // console.log('New rows:', updated)
         return updated
       })
+    } else {
+      // Sửa: tìm theo MaNha
+      setRows(prev => prev.map(row => row.MaNha === editId ? newData : row))
     }
+
     setOpen(false)
   }
 
@@ -177,7 +183,7 @@ function ToaNha() {
       confirmationText: 'Xóa',
       cancellationText: 'Hủy'
     }).then(() => {
-      handleDelete(row.id)
+      handleDelete(row.MaNha)
     }).catch(() => { })
   }
 
@@ -187,7 +193,7 @@ function ToaNha() {
       const keyword = searchKeyword.toLowerCase()
       const matchesSearch =
         row.TenNha.toLowerCase().includes(keyword) ||
-        row.id.toLowerCase().includes(keyword) ||
+        row.MaNha.toLowerCase().includes(keyword) ||
         row.DiaChiNha.toLowerCase().includes(keyword)
       return matchesStatus && matchesSearch
     })
@@ -213,14 +219,14 @@ function ToaNha() {
         </Box>
       </Box>
 
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
+      <Box sx={{ display: 'flex', gap: 2, justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
         <Autocomplete
           options={status}
           getOptionLabel={(option) => option.title}
           onChange={(e, value) => setFilterStatus(value?.title || null)}
           // getOptionDisabled={(option) => option.title === 'Hoạt động'} // chỉ disable 'Hoạt động'
           sx={{
-            width: '45%',
+            width: '100%',
             '& .MuiInputBase-root': {
               paddingTop: 0,
               paddingBottom: 0
@@ -236,7 +242,7 @@ function ToaNha() {
 
         <TextField
           sx={{
-            width: '45%',
+            width: '100%',
             '& .toolpad-demo-app-x0zmg8-MuiInputBase-input-MuiOutlinedInput-input': {
               py: '7.5px'
             },
@@ -278,8 +284,8 @@ function ToaNha() {
                 <TextField
                   label="Tên viết tắt/Mã tòa (*)"
                   fullWidth
-                  value={formData.id || ''}
-                  name="id"
+                  value={formData.MaNha || ''}
+                  name="MaNha"
                   onChange={handleChange}
                 />
               </Grid>
@@ -378,20 +384,36 @@ function ToaNha() {
               <StyledTableCell>Tên tòa nhà</StyledTableCell>
               <StyledTableCell>Số phòng</StyledTableCell>
               <StyledTableCell>Địa chỉ</StyledTableCell>
-              <StyledTableCell>Trạng thái</StyledTableCell>
+              <StyledTableCell align='center'>Trạng thái</StyledTableCell>
               <StyledTableCell align='center'>Tháo tác</StyledTableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {(filteredRows || []).map((row) => (
-              <StyledTableRow key={row.id}>
-                <StyledTableCell sx={{ p: '8px' }}>{row.id}</StyledTableCell>
+              <StyledTableRow key={row.MaNha}>
+                <StyledTableCell sx={{ p: '8px' }}>{row.MaNha}</StyledTableCell>
                 <StyledTableCell sx={{ p: '8px' }}>{row.TenNha}</StyledTableCell>
                 <StyledTableCell sx={{ p: '8px' }}>{Array.isArray(row.Phongs) ? row.Phongs.length : 0}</StyledTableCell>
                 <StyledTableCell sx={{ p: '8px' }}>
                   {`${row.DiaChiNha}, ${row.XaPhuong}, ${row.QuanHuyen}, ${row.TinhThanh}`}
                 </StyledTableCell>
-                <StyledTableCell sx={{ p: '8px' }}>{row.TrangThai}</StyledTableCell>
+                <StyledTableCell align='center' sx={{ p: '8px' }}>
+                  <span
+                    style={{
+                      padding: '4px 8px',
+                      borderRadius: '12px',
+                      color: row.TrangThai === 'Hoạt động' ? '#388e3c' : '#EA5455',
+                      backgroundColor: row.TrangThai === 'Hoạt động' ? '#c8e6c9' : '#EA54551F',
+                      fontWeight: 600,
+                      fontSize: '13px',
+                      display: 'inline-block',
+                      textAlign: 'center',
+                      minWidth: '80px'
+                    }}
+                  >
+                    {row.TrangThai}
+                  </span>
+                </StyledTableCell>
                 <StyledTableCell sx={{ p: '8px' }}>
                   <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
                     <Tooltip title="Sửa">

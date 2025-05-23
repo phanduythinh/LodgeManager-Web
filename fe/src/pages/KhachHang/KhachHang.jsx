@@ -47,7 +47,7 @@ const KhachHangs = [
     Email: 'nguyenvana@gmail.com',
     CCCD: '0342000012345',
     GioiTinh: 'Nam',
-    NgaySinh: '11/11/1111',
+    NgaySinh: '11/11/1900',
     DiaChiNha: 'Thôn Ba',
     XaPhuong: 'Song Lãng',
     QuanHuyen: 'Vũ Thư',
@@ -386,6 +386,7 @@ function KhachHang() {
                   label="Ngày sinh"
                   value={formData.NgaySinh || null}
                   onChange={(date) => setFormData(prev => ({ ...prev, NgaySinh: date }))}
+                  format="DD/MM/YYYY"
                   renderInput={(params) => (
                     <TextField
                       {...params}

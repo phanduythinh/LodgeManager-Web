@@ -12,6 +12,7 @@ import Tooltip from '@mui/material/Tooltip'
 import DeleteIcon from '@mui/icons-material/Delete'
 import BorderColorIcon from '@mui/icons-material/BorderColor'
 import SearchIcon from '@mui/icons-material/Search'
+import { ToaNhaData } from '../../apis/mock-data'
 import { useConfirm } from 'material-ui-confirm'
 
 const StyledTableCell = styled(TableCell)(() => ({
@@ -31,52 +32,19 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
   }
 }))
 
-const Phongs = [
-  {
-    MaPhong: 'Phong 101',
-    MaNhaId: 'CH-001',
-    TenPhong: 'P.101',
-    Tang: '1',
-    GiaThue: '3000000',
-    DatCoc: '3000000',
-    DienTich: '20',
-    SoKhachToiDa: '3',
-    TrangThai: 'Đang ở'
-  },
-  {
-    MaPhong: 'Phong 201',
-    MaNhaId: 'CH-002',
-    TenPhong: 'P.201',
-    Tang: '2',
-    GiaThue: '2900000',
-    DatCoc: '2900000',
-    DienTich: '20',
-    SoKhachToiDa: '3',
-    TrangThai: 'Đang ở'
-  },
-  {
-    MaPhong: 'Phong 301',
-    MaNhaId: 'CH-003',
-    TenPhong: 'P.301',
-    Tang: '3',
-    GiaThue: '2800000',
-    DatCoc: '2800000',
-    DienTich: '20',
-    SoKhachToiDa: '3',
-    TrangThai: 'Còn trống'
-  }
-]
-
-const listToaNha = [...new Set(Phongs.map(p => p.MaNhaId))].map(nha => ({ title: nha }))
-const listTang = [...new Set(Phongs.map(p => p.Tang))].map(tang => ({ title: tang }))
-const listTrangThai = [...new Set(Phongs.map(p => p.TrangThai))].map(tt => ({ title: tt }))
-
 function ToaNha() {
-  const [rows, setRows] = React.useState(Phongs)
+  const [rows, setRows] = React.useState(() =>
+    ToaNhaData.flatMap(toaNha =>
+      toaNha.Phongs.map(phong => ({
+        ...phong,
+        TenNha: toaNha.TenNha
+      }))
+    )
+  )
   const [open, setOpen] = React.useState(false)
   const [formData, setFormData] = React.useState({
     MaPhong: '',
-    MaNhaId: '',
+    TenNha: '',
     TenPhong: '',
     Tang: '',
     GiaThue: '',
@@ -91,7 +59,6 @@ function ToaNha() {
   const [filterTang, setFilterTang] = React.useState(null)
   const [filterTrangThai, setFilterTrangThai] = React.useState(null)
   const [searchText, setSearchText] = React.useState('')
-
   const confirm = useConfirm()
 
   const handleDelete = (MaPhong) => {
@@ -101,7 +68,7 @@ function ToaNha() {
   const handleOpenAdd = () => {
     setFormData({
       MaPhong: '',
-      MaNhaId: '',
+      TenNha: '',
       TenPhong: '',
       Tang: '',
       GiaThue: '',
@@ -168,12 +135,7 @@ function ToaNha() {
     setOpen(false)
   }
 
-  // const listToaNha = [
-  //   { title: 'Hou teo' },
-  //   { title: 'Home tay' }
-  // ]
-
-  const hanhdleDeleteToaNha = (row) => {
+  const hanhdleDeletePhong = (row) => {
     confirm({
       title: 'Xóa phòng',
       description: `Bạn chắc chắn muốn xóa phòng ${row.MaPhong}?`,
@@ -186,7 +148,7 @@ function ToaNha() {
 
   // Filter rows theo filterToaNha, filterTang, filterTrangThai và searchText
   const filteredRows = rows.filter(row => {
-    if (filterToaNha && row.MaNhaId !== filterToaNha) return false
+    if (filterToaNha && row.TenNha !== filterToaNha) return false
     if (filterTang && row.Tang !== filterTang) return false
     if (filterTrangThai && row.TrangThai !== filterTrangThai) return false
     if (searchText.trim() !== '') {
@@ -194,12 +156,26 @@ function ToaNha() {
       if (!(
         row.MaPhong.toLowerCase().includes(text) ||
         row.TenPhong.toLowerCase().includes(text) ||
-        row.MaNhaId.toLowerCase().includes(text)
+        row.TenNha.toLowerCase().includes(text)
       )) return false
     }
     return true
   })
 
+  const listTrangThai = [{ title: 'Đang ở' }, { title: 'Còn trống' }]
+  const listTang = [
+    { title: 'Tầng 1' },
+    { title: 'Tầng 2' },
+    { title: 'Tầng 3' },
+    { title: 'Tầng 4' },
+    { title: 'Tầng 5' },
+    { title: 'Tầng 6' },
+    { title: 'Tầng 7' },
+    { title: 'Tầng 8' },
+    { title: 'Tầng 9' },
+    { title: 'Tầng 10' }
+  ]
+  const listToaNha = [...new Set(ToaNhaData.map(p => p.TenNha))].map(nha => ({ title: nha }))
 
   return (
     <Box sx={{ m: 1 }}>
@@ -439,25 +415,41 @@ function ToaNha() {
               <StyledTableCell align='right'>Giá thuê</StyledTableCell>
               <StyledTableCell align='right'>Đặt cọc</StyledTableCell>
               <StyledTableCell align='right'>Diện tích</StyledTableCell>
-              <StyledTableCell>Số khách</StyledTableCell>
-              <StyledTableCell>Trạng thái</StyledTableCell>
+              <StyledTableCell align='right'>Số khách</StyledTableCell>
+              <StyledTableCell align='center'>Trạng thái</StyledTableCell>
               <StyledTableCell align='center'>Tháo tác</StyledTableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {filteredRows.map((row, index) => (
               <StyledTableRow key={row.MaPhong}>
-                <StyledTableCell>{row.MaPhong}</StyledTableCell>
-                <StyledTableCell>
+                <StyledTableCell sx={{ p: '8px' }}>{row.MaPhong}</StyledTableCell>
+                <StyledTableCell sx={{ p: '8px' }}>
                   <Box>{row.TenPhong}</Box>
-                  <Box sx={{ color: '#B9B9C3' }}>Tòa nhà: {row.MaNhaId}</Box>
-                  <Box sx={{ color: '#B9B9C3' }}>Tầng: {row.Tang}</Box>
+                  <Box sx={{ color: '#B9B9C3' }}>Tòa nhà: {row.TenNha}</Box>
+                  <Box sx={{ color: '#B9B9C3' }}>{row.Tang}</Box>
                 </StyledTableCell>
-                <StyledTableCell align='right'>{row.GiaThue}</StyledTableCell>
-                <StyledTableCell align='right'>{row.DatCoc}</StyledTableCell>
-                <StyledTableCell align='right'>{row.DienTich} m²</StyledTableCell>
-                <StyledTableCell>{row.SoKhachToiDa}</StyledTableCell>
-                <StyledTableCell>{row.TrangThai}</StyledTableCell>
+                <StyledTableCell align='right' sx={{ p: '8px' }}>{row.GiaThue}</StyledTableCell>
+                <StyledTableCell align='right' sx={{ p: '8px' }}>{row.DatCoc}</StyledTableCell>
+                <StyledTableCell align='right' sx={{ p: '8px' }}>{row.DienTich} m²</StyledTableCell>
+                <StyledTableCell align='right' sx={{ p: '8px' }}>{row.SoKhachToiDa}</StyledTableCell>
+                <StyledTableCell align='center' sx={{ p: '8px' }}>
+                  <span
+                    style={{
+                      padding: '4px 8px',
+                      borderRadius: '12px',
+                      color: row.TrangThai === 'Đang ở' ? '#388e3c' : '#EA5455',
+                      backgroundColor: row.TrangThai === 'Đang ở' ? '#c8e6c9' : '#EA54551F',
+                      fontWeight: 600,
+                      fontSize: '13px',
+                      display: 'inline-block',
+                      textAlign: 'center',
+                      minWidth: '80px'
+                    }}
+                  >
+                    {row.TrangThai}
+                  </span>
+                </StyledTableCell>
                 <StyledTableCell sx={{ p: '8px' }}>
                   <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
                     <Tooltip title="Sửa">
@@ -473,7 +465,7 @@ function ToaNha() {
                       <Button
                         variant="contained"
                         sx={{ bgcolor: '#EA5455' }}
-                        onClick={() => hanhdleDeleteToaNha(row)}
+                        onClick={() => hanhdleDeletePhong(row)}
                       >
                         <DeleteIcon fontSize='small' />
                       </Button>
