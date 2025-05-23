@@ -15,7 +15,7 @@ class ContractPolicy
      */
     public function viewAny(User $user): bool
     {
-        return true; // Tất cả người dùng đã đăng nhập có thể xem danh sách hợp đồng
+        return true;
     }
 
     /**
@@ -23,7 +23,7 @@ class ContractPolicy
      */
     public function view(User $user, Contract $contract): bool
     {
-        return true; // Tất cả người dùng đã đăng nhập có thể xem chi tiết hợp đồng
+        return true;
     }
 
     /**
@@ -31,7 +31,7 @@ class ContractPolicy
      */
     public function create(User $user): bool
     {
-        return $user->hasRole('admin') || $user->hasRole('manager'); // Chỉ admin và manager có thể tạo hợp đồng mới
+        return $user->hasRole('admin') || $user->hasRole('manager');
     }
 
     /**
@@ -39,7 +39,7 @@ class ContractPolicy
      */
     public function update(User $user, Contract $contract): bool
     {
-        return $user->hasRole('admin') || $user->hasRole('manager'); // Chỉ admin và manager có thể cập nhật hợp đồng
+        return $user->hasRole('admin') || $user->hasRole('manager');
     }
 
     /**
@@ -47,7 +47,7 @@ class ContractPolicy
      */
     public function delete(User $user, Contract $contract): bool
     {
-        return $user->hasRole('admin'); // Chỉ admin có thể xóa hợp đồng
+        return $user->hasRole('admin');
     }
 
     /**
@@ -55,7 +55,7 @@ class ContractPolicy
      */
     public function restore(User $user, Contract $contract): bool
     {
-        return $user->hasRole('admin'); // Chỉ admin có thể khôi phục hợp đồng đã xóa
+        return $user->hasRole('admin');
     }
 
     /**
@@ -63,7 +63,39 @@ class ContractPolicy
      */
     public function forceDelete(User $user, Contract $contract): bool
     {
-        return $user->hasRole('admin'); // Chỉ admin có thể xóa vĩnh viễn hợp đồng
+        return $user->hasRole('admin');
+    }
+
+    /**
+     * Determine whether the user can manage contract payments.
+     */
+    public function managePayments(User $user, Contract $contract): bool
+    {
+        return $user->hasAnyRole(['admin', 'manager']);
+    }
+
+    /**
+     * Determine whether the user can manage contract services.
+     */
+    public function manageServices(User $user, Contract $contract): bool
+    {
+        return $user->hasAnyRole(['admin', 'manager']);
+    }
+
+    /**
+     * Determine whether the user can view contract history.
+     */
+    public function viewHistory(User $user, Contract $contract): bool
+    {
+        return $user->hasAnyRole(['admin', 'manager']);
+    }
+
+    /**
+     * Determine whether the user can manage contract documents.
+     */
+    public function manageDocuments(User $user, Contract $contract): bool
+    {
+        return $user->hasAnyRole(['admin', 'manager']);
     }
 
     /**
@@ -71,7 +103,15 @@ class ContractPolicy
      */
     public function terminate(User $user, Contract $contract): bool
     {
-        return $user->hasRole('admin') || $user->hasRole('manager'); // Chỉ admin và manager có thể chấm dứt hợp đồng
+        if ($user->hasRole('admin')) {
+            return true;
+        }
+
+        if ($user->hasRole('manager')) {
+            return !$contract->isExpired() && !$contract->isTerminated();
+        }
+
+        return false;
     }
 
     /**
@@ -79,6 +119,6 @@ class ContractPolicy
      */
     public function renew(User $user, Contract $contract): bool
     {
-        return $user->hasRole('admin') || $user->hasRole('manager'); // Chỉ admin và manager có thể gia hạn hợp đồng
+        return $user->hasAnyRole(['admin', 'manager']) && $contract->isExpiringSoon();
     }
 }

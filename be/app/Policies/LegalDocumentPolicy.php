@@ -15,15 +15,27 @@ class LegalDocumentPolicy
      */
     public function viewAny(User $user): bool
     {
-        return true; // Tất cả người dùng đã đăng nhập có thể xem danh sách tài liệu pháp lý
+        return $user->hasAnyRole(['admin', 'manager', 'staff']);
     }
 
     /**
      * Determine whether the user can view the model.
      */
-    public function view(User $user, LegalDocument $legalDocument): bool
+    public function view(User $user, LegalDocument $document): bool
     {
-        return true; // Tất cả người dùng đã đăng nhập có thể xem chi tiết tài liệu pháp lý
+        if ($user->hasRole('admin')) {
+            return true;
+        }
+
+        if ($user->hasRole('manager')) {
+            return true;
+        }
+
+        if ($user->hasRole('staff')) {
+            return $document->status !== 'inactive';
+        }
+
+        return false;
     }
 
     /**
@@ -31,54 +43,138 @@ class LegalDocumentPolicy
      */
     public function create(User $user): bool
     {
-        return $user->hasRole('admin') || $user->hasRole('manager'); // Chỉ admin và manager có thể tạo tài liệu pháp lý mới
+        return $user->hasAnyRole(['admin', 'manager']);
     }
 
     /**
      * Determine whether the user can update the model.
      */
-    public function update(User $user, LegalDocument $legalDocument): bool
+    public function update(User $user, LegalDocument $document): bool
     {
-        return $user->hasRole('admin') || $user->hasRole('manager'); // Chỉ admin và manager có thể cập nhật tài liệu pháp lý
+        if ($user->hasRole('admin')) {
+            return true;
+        }
+
+        if ($user->hasRole('manager')) {
+            return $document->status !== 'inactive';
+        }
+
+        return false;
     }
 
     /**
      * Determine whether the user can delete the model.
      */
-    public function delete(User $user, LegalDocument $legalDocument): bool
+    public function delete(User $user, LegalDocument $document): bool
     {
-        return $user->hasRole('admin'); // Chỉ admin có thể xóa tài liệu pháp lý
+        if ($user->hasRole('admin')) {
+            return true;
+        }
+
+        if ($user->hasRole('manager')) {
+            return $document->status === 'inactive' && !$document->isReferenced();
+        }
+
+        return false;
     }
 
     /**
      * Determine whether the user can restore the model.
      */
-    public function restore(User $user, LegalDocument $legalDocument): bool
+    public function restore(User $user, LegalDocument $document): bool
     {
-        return $user->hasRole('admin'); // Chỉ admin có thể khôi phục tài liệu pháp lý đã xóa
+        return $user->hasRole('admin');
     }
 
     /**
      * Determine whether the user can permanently delete the model.
      */
-    public function forceDelete(User $user, LegalDocument $legalDocument): bool
+    public function forceDelete(User $user, LegalDocument $document): bool
     {
-        return $user->hasRole('admin'); // Chỉ admin có thể xóa vĩnh viễn tài liệu pháp lý
+        return $user->hasRole('admin') && !$document->isReferenced();
+    }
+
+    /**
+     * Determine whether the user can manage document versions.
+     */
+    public function manageVersions(User $user, LegalDocument $document): bool
+    {
+        return $user->hasAnyRole(['admin', 'manager']);
+    }
+
+    /**
+     * Determine whether the user can view document history.
+     */
+    public function viewHistory(User $user, LegalDocument $document): bool
+    {
+        return $user->hasAnyRole(['admin', 'manager']);
+    }
+
+    /**
+     * Determine whether the user can manage document templates.
+     */
+    public function manageTemplates(User $user, LegalDocument $document): bool
+    {
+        return $user->hasAnyRole(['admin', 'manager']);
+    }
+
+    /**
+     * Determine whether the user can manage document categories.
+     */
+    public function manageCategories(User $user, LegalDocument $document): bool
+    {
+        return $user->hasAnyRole(['admin', 'manager']);
+    }
+
+    /**
+     * Determine whether the user can manage document permissions.
+     */
+    public function managePermissions(User $user, LegalDocument $document): bool
+    {
+        return $user->hasRole('admin');
+    }
+
+    /**
+     * Determine whether the user can manage document workflows.
+     */
+    public function manageWorkflows(User $user, LegalDocument $document): bool
+    {
+        return $user->hasAnyRole(['admin', 'manager']);
     }
 
     /**
      * Determine whether the user can download the document.
      */
-    public function download(User $user, LegalDocument $legalDocument): bool
+    public function download(User $user, LegalDocument $document): bool
     {
-        return true; // Tất cả người dùng đã đăng nhập có thể tải xuống tài liệu pháp lý
+        if ($user->hasRole('admin')) {
+            return true;
+        }
+
+        if ($user->hasRole('manager')) {
+            return true;
+        }
+
+        if ($user->hasRole('staff')) {
+            return $document->status !== 'inactive';
+        }
+
+        return false;
     }
 
     /**
      * Determine whether the user can verify the document.
      */
-    public function verify(User $user, LegalDocument $legalDocument): bool
+    public function verify(User $user, LegalDocument $document): bool
     {
-        return $user->hasRole('admin') || $user->hasRole('manager'); // Chỉ admin và manager có thể xác minh tài liệu pháp lý
+        if ($user->hasRole('admin')) {
+            return true;
+        }
+
+        if ($user->hasRole('manager')) {
+            return $document->status !== 'inactive';
+        }
+
+        return false;
     }
 }

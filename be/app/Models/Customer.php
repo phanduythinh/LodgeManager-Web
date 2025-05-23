@@ -6,10 +6,36 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @OA\Schema(
+ *     schema="Customer",
+ *     title="Customer",
+ *     description="Customer model",
+ *     @OA\Property(property="id", type="integer", format="int64", example=1),
+ *     @OA\Property(property="name", type="string", example="John Doe"),
+ *     @OA\Property(property="email", type="string", format="email", example="john@example.com"),
+ *     @OA\Property(property="phone", type="string", example="0123456789"),
+ *     @OA\Property(
+ *         property="status",
+ *         type="string",
+ *         enum={"active", "inactive"},
+ *         example="active"
+ *     ),
+ *     @OA\Property(property="address", type="string", nullable=true, example="123 Main St"),
+ *     @OA\Property(property="id_card", type="string", nullable=true, example="123456789"),
+ *     @OA\Property(property="id_card_issue_date", type="string", format="date", nullable=true, example="2020-01-01"),
+ *     @OA\Property(property="id_card_issue_place", type="string", nullable=true, example="Ha Noi"),
+ *     @OA\Property(property="note", type="string", nullable=true, example="Customer note"),
+ *     @OA\Property(property="created_at", type="string", format="date-time"),
+ *     @OA\Property(property="updated_at", type="string", format="date-time"),
+ *     @OA\Property(property="deleted_at", type="string", format="date-time", nullable=true)
+ * )
+ */
 class Customer extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $table = 'customers';
     protected $primaryKey = 'MaKhachHang';
@@ -17,18 +43,19 @@ class Customer extends Model
     protected $keyType = 'string';
 
     protected $fillable = [
-        'MaKhachHang',
-        'TenKhachHang',
-        'SDT',
-        'Email',
-        'DiaChiThuongTru',
-        'NgaySinh',
-        'CCCD',
-        'MaChuTro'
+        'name',
+        'email',
+        'phone',
+        'status',
+        'address',
+        'id_card',
+        'id_card_issue_date',
+        'id_card_issue_place',
+        'note'
     ];
 
     protected $casts = [
-        'NgaySinh' => 'date'
+        'id_card_issue_date' => 'date'
     ];
 
     // Validation rules

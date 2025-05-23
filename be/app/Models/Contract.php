@@ -5,11 +5,38 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @OA\Schema(
+ *     schema="Contract",
+ *     title="Contract",
+ *     description="Contract model",
+ *     @OA\Property(property="id", type="integer", format="int64", example=1),
+ *     @OA\Property(property="room_id", type="integer", example=1),
+ *     @OA\Property(property="customer_id", type="integer", example=1),
+ *     @OA\Property(property="start_date", type="string", format="date", example="2024-01-01"),
+ *     @OA\Property(property="end_date", type="string", format="date", example="2024-12-31"),
+ *     @OA\Property(
+ *         property="status",
+ *         type="string",
+ *         enum={"active", "expired", "terminated"},
+ *         example="active"
+ *     ),
+ *     @OA\Property(property="deposit_amount", type="number", format="float", example=2000000),
+ *     @OA\Property(property="monthly_rent", type="number", format="float", example=3000000),
+ *     @OA\Property(property="payment_day", type="integer", example=5),
+ *     @OA\Property(property="description", type="string", nullable=true, example="Contract for room 101"),
+ *     @OA\Property(property="created_at", type="string", format="date-time"),
+ *     @OA\Property(property="updated_at", type="string", format="date-time"),
+ *     @OA\Property(property="deleted_at", type="string", format="date-time", nullable=true)
+ * )
+ */
 class Contract extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $table = 'contracts';
     protected $primaryKey = 'MaHopDong';
@@ -17,24 +44,25 @@ class Contract extends Model
     protected $keyType = 'string';
 
     protected $fillable = [
-        'MaHopDong',
-        'NguoiThue',
-        'NgayBatDau',
-        'NgayKetThuc',
-        'TienCoc',
-        'TienPhong',
-        'SoPhong',
-        'SoNha',
-        'MaChuTro',
-        'MaNhaTro',
-        'MaPhong'
+        'room_id',
+        'customer_id',
+        'start_date',
+        'end_date',
+        'status',
+        'deposit_amount',
+        'monthly_rent',
+        'payment_day',
+        'description'
     ];
 
     protected $casts = [
-        'NgayBatDau' => 'date',
-        'NgayKetThuc' => 'date',
-        'TienCoc' => 'float',
-        'TienPhong' => 'float'
+        'start_date' => 'date',
+        'end_date' => 'date',
+        'deposit_amount' => 'float',
+        'monthly_rent' => 'float',
+        'payment_day' => 'integer',
+        'room_id' => 'integer',
+        'customer_id' => 'integer'
     ];
 
     // Validation rules
@@ -53,23 +81,25 @@ class Contract extends Model
     ];
 
     // Relationships
-    public function owner(): BelongsTo
-    {
-        return $this->belongsTo(Owner::class, 'MaChuTro', 'MaChuTro');
-    }
-
-    public function building(): BelongsTo
-    {
-        return $this->belongsTo(Building::class, 'MaNhaTro', 'MaNhaTro');
-    }
-
     public function room(): BelongsTo
     {
-        return $this->belongsTo(Room::class, 'MaPhong', 'MaPhong');
+        return $this->belongsTo(Room::class);
     }
 
-    public function reports(): HasMany
+    public function customer(): BelongsTo
     {
-        return $this->hasMany(Report::class, 'MaHopDong', 'MaHopDong');
+        return $this->belongsTo(Customer::class);
+    }
+
+    public function services(): BelongsToMany
+    {
+        return $this->belongsToMany(Service::class)
+            ->withPivot('price')
+            ->withTimestamps();
+    }
+
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(Invoice::class);
     }
 }

@@ -5,10 +5,33 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @OA\Schema(
+ *     schema="Service",
+ *     title="Service",
+ *     description="Service model",
+ *     @OA\Property(property="id", type="integer", format="int64", example=1),
+ *     @OA\Property(property="name", type="string", example="Internet"),
+ *     @OA\Property(property="description", type="string", nullable=true, example="High-speed internet service"),
+ *     @OA\Property(property="price", type="number", format="float", example=200000),
+ *     @OA\Property(
+ *         property="status",
+ *         type="string",
+ *         enum={"active", "inactive"},
+ *         example="active"
+ *     ),
+ *     @OA\Property(property="note", type="string", nullable=true, example="Service note"),
+ *     @OA\Property(property="created_at", type="string", format="date-time"),
+ *     @OA\Property(property="updated_at", type="string", format="date-time"),
+ *     @OA\Property(property="deleted_at", type="string", format="date-time", nullable=true)
+ * )
+ */
 class Service extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $table = 'services';
     protected $primaryKey = 'MaDichVu';
@@ -16,15 +39,15 @@ class Service extends Model
     protected $keyType = 'string';
 
     protected $fillable = [
-        'MaDichVu',
-        'TenDichVu',
-        'DonViTinh',
-        'DonGia',
-        'MaChuTro'
+        'name',
+        'description',
+        'price',
+        'status',
+        'note'
     ];
 
     protected $casts = [
-        'DonGia' => 'float'
+        'price' => 'float'
     ];
 
     // Validation rules
@@ -40,5 +63,12 @@ class Service extends Model
     public function owner(): BelongsTo
     {
         return $this->belongsTo(Owner::class, 'MaChuTro', 'MaChuTro');
+    }
+
+    public function contracts(): BelongsToMany
+    {
+        return $this->belongsToMany(Contract::class, 'contract_services')
+            ->withPivot(['quantity', 'price', 'start_date', 'end_date'])
+            ->withTimestamps();
     }
 }

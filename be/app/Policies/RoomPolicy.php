@@ -15,7 +15,7 @@ class RoomPolicy
      */
     public function viewAny(User $user): bool
     {
-        return true; // Tất cả người dùng đã đăng nhập có thể xem danh sách phòng
+        return true;
     }
 
     /**
@@ -23,7 +23,7 @@ class RoomPolicy
      */
     public function view(User $user, Room $room): bool
     {
-        return true; // Tất cả người dùng đã đăng nhập có thể xem chi tiết phòng
+        return true;
     }
 
     /**
@@ -31,7 +31,7 @@ class RoomPolicy
      */
     public function create(User $user): bool
     {
-        return $user->hasRole('admin') || $user->hasRole('manager'); // Chỉ admin và manager có thể tạo phòng mới
+        return $user->hasRole('admin') || $user->hasRole('manager');
     }
 
     /**
@@ -39,7 +39,7 @@ class RoomPolicy
      */
     public function update(User $user, Room $room): bool
     {
-        return $user->hasRole('admin') || $user->hasRole('manager'); // Chỉ admin và manager có thể cập nhật phòng
+        return $user->hasRole('admin') || $user->hasRole('manager');
     }
 
     /**
@@ -47,7 +47,7 @@ class RoomPolicy
      */
     public function delete(User $user, Room $room): bool
     {
-        return $user->hasRole('admin'); // Chỉ admin có thể xóa phòng
+        return $user->hasRole('admin');
     }
 
     /**
@@ -55,7 +55,7 @@ class RoomPolicy
      */
     public function restore(User $user, Room $room): bool
     {
-        return $user->hasRole('admin'); // Chỉ admin có thể khôi phục phòng đã xóa
+        return $user->hasRole('admin');
     }
 
     /**
@@ -63,6 +63,46 @@ class RoomPolicy
      */
     public function forceDelete(User $user, Room $room): bool
     {
-        return $user->hasRole('admin'); // Chỉ admin có thể xóa vĩnh viễn phòng
+        return $user->hasRole('admin');
+    }
+
+    /**
+     * Determine whether the user can manage room contracts.
+     */
+    public function manageContracts(User $user, Room $room): bool
+    {
+        return $user->hasAnyRole(['admin', 'manager']);
+    }
+
+    /**
+     * Determine whether the user can manage room maintenance.
+     */
+    public function manageMaintenance(User $user, Room $room): bool
+    {
+        return $user->hasAnyRole(['admin', 'manager', 'staff']);
+    }
+
+    /**
+     * Determine whether the user can view room history.
+     */
+    public function viewHistory(User $user, Room $room): bool
+    {
+        return $user->hasAnyRole(['admin', 'manager']);
+    }
+
+    /**
+     * Determine whether the user can manage room inventory.
+     */
+    public function manageInventory(User $user, Room $room): bool
+    {
+        return $user->hasAnyRole(['admin', 'manager', 'staff']);
+    }
+
+    /**
+     * Determine whether the user can manage room services.
+     */
+    public function manageServices(User $user, Room $room): bool
+    {
+        return $user->hasAnyRole(['admin', 'manager']);
     }
 }
