@@ -4,75 +4,79 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
+/**
+ * @OA\Schema(
+ *     schema="CustomerRequest",
+ *     title="Customer Request",
+ *     description="Request body for creating/updating a customer",
+ *     required={"name", "email", "phone", "status"},
+ *     @OA\Property(property="name", type="string", example="John Doe"),
+ *     @OA\Property(property="email", type="string", format="email", example="john@example.com"),
+ *     @OA\Property(property="phone", type="string", example="0123456789"),
+ *     @OA\Property(
+ *         property="status",
+ *         type="string",
+ *         enum={"active", "inactive"},
+ *         example="active"
+ *     ),
+ *     @OA\Property(property="address", type="string", nullable=true, example="123 Main St"),
+ *     @OA\Property(property="id_card", type="string", nullable=true, example="123456789"),
+ *     @OA\Property(property="id_card_issue_date", type="string", format="date", nullable=true, example="2020-01-01"),
+ *     @OA\Property(property="id_card_issue_place", type="string", nullable=true, example="Ha Noi"),
+ *     @OA\Property(property="note", type="string", nullable=true, example="Customer note")
+ * )
+ */
 class CustomerRequest extends FormRequest
 {
+    /**
+     * Determine if the user is authorized to make this request.
+     */
     public function authorize(): bool
     {
         return true;
     }
 
+    /**
+     * Get the validation rules that apply to the request.
+     *
+     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     */
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:255', 'min:3'],
-            'email' => ['required', 'email', 'max:255', 'unique:customers,email,' . $this->customer?->id],
-            'phone' => ['required', 'string', 'regex:/^[0-9]{10,11}$/'],
-            'address' => ['required', 'string', 'max:255', 'min:5'],
-            'id_card' => ['required', 'string', 'regex:/^[0-9]{9,12}$/', 'unique:customers,id_card,' . $this->customer?->id],
-            'id_card_issue_date' => ['required', 'date', 'before_or_equal:today'],
-            'id_card_issue_place' => ['required', 'string', 'max:255'],
-            'date_of_birth' => ['required', 'date', 'before_or_equal:' . now()->subYears(18)],
-            'gender' => ['required', 'string', 'in:male,female,other'],
-            'occupation' => ['required', 'string', 'max:255'],
-            'workplace' => ['required', 'string', 'max:255'],
-            'emergency_contact_name' => ['required', 'string', 'max:255'],
-            'emergency_contact_phone' => ['required', 'string', 'regex:/^[0-9]{10,11}$/'],
-            'emergency_contact_relationship' => ['required', 'string', 'max:255'],
-            'status' => ['required', 'string', 'in:active,inactive,blacklisted'],
-            'note' => ['nullable', 'string', 'max:1000'],
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255'],
+            'phone' => ['required', 'string', 'max:20'],
+            'status' => ['required', 'string', 'in:active,inactive'],
+            'address' => ['nullable', 'string', 'max:255'],
+            'id_card' => ['nullable', 'string', 'max:20'],
+            'id_card_issue_date' => ['nullable', 'date'],
+            'id_card_issue_place' => ['nullable', 'string', 'max:255'],
+            'note' => ['nullable', 'string']
         ];
     }
 
+    /**
+     * Get custom messages for validator errors.
+     *
+     * @return array<string, string>
+     */
     public function messages(): array
     {
         return [
-            'name.required' => 'Họ tên là bắt buộc',
-            'name.min' => 'Họ tên phải có ít nhất 3 ký tự',
-            'name.max' => 'Họ tên không được vượt quá 255 ký tự',
+            'name.required' => 'Tên khách hàng là bắt buộc',
+            'name.max' => 'Tên khách hàng không được vượt quá 255 ký tự',
             'email.required' => 'Email là bắt buộc',
             'email.email' => 'Email không hợp lệ',
-            'email.unique' => 'Email đã tồn tại',
+            'email.max' => 'Email không được vượt quá 255 ký tự',
             'phone.required' => 'Số điện thoại là bắt buộc',
-            'phone.regex' => 'Số điện thoại không hợp lệ',
-            'address.required' => 'Địa chỉ là bắt buộc',
-            'address.min' => 'Địa chỉ phải có ít nhất 5 ký tự',
-            'address.max' => 'Địa chỉ không được vượt quá 255 ký tự',
-            'id_card.required' => 'CMND/CCCD là bắt buộc',
-            'id_card.regex' => 'CMND/CCCD không hợp lệ',
-            'id_card.unique' => 'CMND/CCCD đã tồn tại',
-            'id_card_issue_date.required' => 'Ngày cấp CMND/CCCD là bắt buộc',
-            'id_card_issue_date.date' => 'Ngày cấp CMND/CCCD không hợp lệ',
-            'id_card_issue_date.before_or_equal' => 'Ngày cấp CMND/CCCD không được sau ngày hiện tại',
-            'id_card_issue_place.required' => 'Nơi cấp CMND/CCCD là bắt buộc',
-            'id_card_issue_place.max' => 'Nơi cấp CMND/CCCD không được vượt quá 255 ký tự',
-            'date_of_birth.required' => 'Ngày sinh là bắt buộc',
-            'date_of_birth.date' => 'Ngày sinh không hợp lệ',
-            'date_of_birth.before_or_equal' => 'Khách hàng phải đủ 18 tuổi',
-            'gender.required' => 'Giới tính là bắt buộc',
-            'gender.in' => 'Giới tính không hợp lệ',
-            'occupation.required' => 'Nghề nghiệp là bắt buộc',
-            'occupation.max' => 'Nghề nghiệp không được vượt quá 255 ký tự',
-            'workplace.required' => 'Nơi làm việc là bắt buộc',
-            'workplace.max' => 'Nơi làm việc không được vượt quá 255 ký tự',
-            'emergency_contact_name.required' => 'Tên người liên hệ khẩn cấp là bắt buộc',
-            'emergency_contact_name.max' => 'Tên người liên hệ khẩn cấp không được vượt quá 255 ký tự',
-            'emergency_contact_phone.required' => 'Số điện thoại liên hệ khẩn cấp là bắt buộc',
-            'emergency_contact_phone.regex' => 'Số điện thoại liên hệ khẩn cấp không hợp lệ',
-            'emergency_contact_relationship.required' => 'Mối quan hệ với người liên hệ khẩn cấp là bắt buộc',
-            'emergency_contact_relationship.max' => 'Mối quan hệ không được vượt quá 255 ký tự',
+            'phone.max' => 'Số điện thoại không được vượt quá 20 ký tự',
             'status.required' => 'Trạng thái là bắt buộc',
             'status.in' => 'Trạng thái không hợp lệ',
-            'note.max' => 'Ghi chú không được vượt quá 1000 ký tự',
+            'address.max' => 'Địa chỉ không được vượt quá 255 ký tự',
+            'id_card.max' => 'Số CMND/CCCD không được vượt quá 20 ký tự',
+            'id_card_issue_date.date' => 'Ngày cấp CMND/CCCD không hợp lệ',
+            'id_card_issue_place.max' => 'Nơi cấp CMND/CCCD không được vượt quá 255 ký tự'
         ];
     }
 }

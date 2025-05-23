@@ -4,63 +4,76 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
+/**
+ * @OA\Schema(
+ *     schema="RoomRequest",
+ *     title="Room Request",
+ *     description="Request body for creating/updating a room",
+ *     required={"room_number", "building_id", "status", "price"},
+ *     @OA\Property(property="room_number", type="string", example="101"),
+ *     @OA\Property(property="building_id", type="integer", example=1),
+ *     @OA\Property(
+ *         property="status",
+ *         type="string",
+ *         enum={"available", "occupied", "maintenance"},
+ *         example="available"
+ *     ),
+ *     @OA\Property(property="price", type="number", format="float", example=2000000),
+ *     @OA\Property(property="area", type="number", format="float", example=25.5),
+ *     @OA\Property(property="floor", type="integer", example=1),
+ *     @OA\Property(property="description", type="string", nullable=true, example="Room with balcony")
+ * )
+ */
 class RoomRequest extends FormRequest
 {
+    /**
+     * Determine if the user is authorized to make this request.
+     */
     public function authorize(): bool
     {
         return true;
     }
 
+    /**
+     * Get the validation rules that apply to the request.
+     *
+     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     */
     public function rules(): array
     {
         return [
-            'room_number' => ['required', 'string', 'max:50', 'regex:/^[A-Za-z0-9\-]+$/'],
-            'floor' => ['required', 'integer', 'min:1', 'max:200'],
-            'area' => ['required', 'numeric', 'min:1', 'max:1000'],
-            'price' => ['required', 'numeric', 'min:0', 'max:1000000000'],
-            'status' => ['required', 'string', 'in:available,occupied,maintenance,reserved'],
-            'description' => ['nullable', 'string', 'max:1000'],
+            'room_number' => ['required', 'string', 'max:10'],
             'building_id' => ['required', 'exists:buildings,id'],
-            'room_type' => ['required', 'string', 'in:standard,deluxe,suite,studio'],
-            'max_occupants' => ['required', 'integer', 'min:1', 'max:10'],
-            'amenities' => ['nullable', 'array'],
-            'amenities.*' => ['string', 'in:air_conditioning,wifi,tv,refrigerator,balcony'],
-            'is_furnished' => ['required', 'boolean'],
-            'deposit_amount' => ['required', 'numeric', 'min:0', 'max:100000000'],
+            'status' => ['required', 'string', 'in:available,occupied,maintenance'],
+            'price' => ['required', 'numeric', 'min:0'],
+            'area' => ['nullable', 'numeric', 'min:0'],
+            'floor' => ['required', 'integer', 'min:1'],
+            'description' => ['nullable', 'string']
         ];
     }
 
+    /**
+     * Get custom messages for validator errors.
+     *
+     * @return array<string, string>
+     */
     public function messages(): array
     {
         return [
             'room_number.required' => 'Số phòng là bắt buộc',
-            'room_number.regex' => 'Số phòng chỉ được chứa chữ cái, số và dấu gạch ngang',
-            'room_number.max' => 'Số phòng không được vượt quá 50 ký tự',
-            'floor.required' => 'Tầng là bắt buộc',
-            'floor.min' => 'Tầng phải lớn hơn 0',
-            'floor.max' => 'Tầng không được vượt quá 200',
-            'area.required' => 'Diện tích là bắt buộc',
-            'area.min' => 'Diện tích phải lớn hơn 0',
-            'area.max' => 'Diện tích không được vượt quá 1000m²',
-            'price.required' => 'Giá phòng là bắt buộc',
-            'price.min' => 'Giá phòng không được âm',
-            'price.max' => 'Giá phòng không được vượt quá 1 tỷ',
-            'status.required' => 'Trạng thái là bắt buộc',
-            'status.in' => 'Trạng thái không hợp lệ',
-            'description.max' => 'Mô tả không được vượt quá 1000 ký tự',
+            'room_number.max' => 'Số phòng không được vượt quá 10 ký tự',
             'building_id.required' => 'Tòa nhà là bắt buộc',
             'building_id.exists' => 'Tòa nhà không tồn tại',
-            'room_type.required' => 'Loại phòng là bắt buộc',
-            'room_type.in' => 'Loại phòng không hợp lệ',
-            'max_occupants.required' => 'Số người tối đa là bắt buộc',
-            'max_occupants.min' => 'Số người tối đa phải lớn hơn 0',
-            'max_occupants.max' => 'Số người tối đa không được vượt quá 10',
-            'amenities.array' => 'Tiện nghi phải là một mảng',
-            'amenities.*.in' => 'Tiện nghi không hợp lệ',
-            'is_furnished.required' => 'Trạng thái nội thất là bắt buộc',
-            'deposit_amount.required' => 'Số tiền đặt cọc là bắt buộc',
-            'deposit_amount.min' => 'Số tiền đặt cọc không được âm',
-            'deposit_amount.max' => 'Số tiền đặt cọc không được vượt quá 100 triệu',
+            'status.required' => 'Trạng thái là bắt buộc',
+            'status.in' => 'Trạng thái không hợp lệ',
+            'price.required' => 'Giá phòng là bắt buộc',
+            'price.numeric' => 'Giá phòng phải là số',
+            'price.min' => 'Giá phòng phải lớn hơn 0',
+            'area.numeric' => 'Diện tích phải là số',
+            'area.min' => 'Diện tích phải lớn hơn 0',
+            'floor.required' => 'Tầng là bắt buộc',
+            'floor.integer' => 'Tầng phải là số nguyên',
+            'floor.min' => 'Tầng phải lớn hơn 0'
         ];
     }
 }
