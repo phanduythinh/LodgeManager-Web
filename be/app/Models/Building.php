@@ -39,12 +39,10 @@ class Building extends Model
     protected $fillable = [
         'name',
         'address',
-        'description',
-        'status',
-        'total_floors',
-        'total_rooms',
-        'year_built',
-        'owner_id'
+        'province',
+        'district',
+        'ward',
+        'status'
     ];
 
     protected $casts = [
