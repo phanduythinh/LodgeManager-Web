@@ -3,7 +3,7 @@ import { styled } from '@mui/material/styles'
 import {
   Table, TableBody, TableCell, tableCellClasses, TableContainer,
   TableHead, TableRow, Paper, Button, Box, TextField, Dialog, DialogActions,
-  DialogContent, DialogTitle, Grid, Switch, FormControlLabel
+  DialogContent, DialogTitle, Grid
 } from '@mui/material'
 import Autocomplete from '@mui/material/Autocomplete'
 import AddIcon from '@mui/icons-material/Add'
@@ -255,7 +255,7 @@ function ToaNha() {
             top: -5
           }
         }}
-        placeholder="Tìm kiếm theo mã phòng, tên phòng"
+        placeholder="Tìm kiếm theo mã phòng, tên phòng, tên nhà"
         value={searchText}
         onChange={(e) => setSearchText(e.target.value)}
         InputProps={{

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { styled } from '@mui/material/styles'
 import {
   Table, TableBody, TableCell, tableCellClasses, TableContainer,
@@ -6,6 +6,8 @@ import {
   DialogContent, DialogTitle, Grid, Switch, FormControlLabel
 } from '@mui/material'
 import Autocomplete from '@mui/material/Autocomplete'
+import Popper from '@mui/material/Popper'
+import { Checkbox } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
 import SaveAltIcon from '@mui/icons-material/SaveAlt'
 import Tooltip from '@mui/material/Tooltip'
@@ -16,8 +18,7 @@ import PersonAddAltIcon from '@mui/icons-material/PersonAddAlt'
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline'
 
 import { useConfirm } from 'material-ui-confirm'
-import { getProvinces, getDistrictsByProvinceCode, getWardsByDistrictCode } from 'sub-vn'
-import { ToaNhaData, HopDongs } from '../../apis/mock-data'
+import { ToaNhaData, HopDongs, KhachHangs } from '../../apis/mock-data'
 import { DemoContainer } from '@mui/x-date-pickers/internals/demo'
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
@@ -56,6 +57,42 @@ function HopDong() {
   const [filterStatus, setFilterStatus] = useState(null)
   const [searchKeyword, setSearchKeyword] = useState('')
 
+  const [openKhachHangDialog, setOpenKhachHangDialog] = useState(false)
+  const [selectedKhachHangs, setSelectedKhachHangs] = useState([])
+  const [khachHangDuocChon, setKhachHangDuocChon] = useState([]); // khách hàng sẽ được hiển thị trong hợp đồng
+  const handleOpenAddKhachHang = () => {
+    setOpenKhachHangDialog(true)
+  }
+  const handleCloseAddKhachHang = () => {
+    setOpenKhachHangDialog(false)
+  }
+  // Handler chọn/bỏ chọn 1 khách hàng
+  const handleToggleKhachHang = (maKhachHang) => {
+    setSelectedKhachHangs(prev =>
+      prev.includes(maKhachHang)
+        ? prev.filter(id => id !== maKhachHang)
+        : [...prev, maKhachHang]
+    )
+  }
+  // Handler chọn/bỏ chọn tất cả
+  // Kiểm tra chọn bỏ chọn hết chưa
+  const isAllSelected = selectedKhachHangs.length === KhachHangs.length
+  const isIndeterminate = selectedKhachHangs.length > 0 && !isAllSelected
+  const handleSelectAll = () => {
+    if (isAllSelected) {
+      setSelectedKhachHangs([]);
+    } else {
+      setSelectedKhachHangs(KhachHangs.map(kh => kh.MaKhachHang))
+    }
+  }
+  const handleAddKhachHang = () => {
+    const khachDuocThem = KhachHangs.filter(kh => selectedKhachHangs.includes(kh.MaKhachHang));
+    setKhachHangDuocChon(khachDuocThem);
+    setOpenKhachHangDialog(false);
+  };
+
+
+
   const handleOpenEdit = (row) => {
     setFormData({
       MaHopDong: row.MaHopDong || '',
@@ -91,6 +128,11 @@ function HopDong() {
     setRows(rows.filter(row => row.MaHopDong !== maKH))
   }
 
+  // Trong phần thêm hợp đồng
+  const handleRemoveKhachHang = (maKhachHang) => {
+    setKhachHangDuocChon(prev => prev.filter(kh => kh.MaKhachHang !== maKhachHang));
+  };
+
   const handleClose = () => setOpen(false)
 
   const handleChange = (e) => {
@@ -119,7 +161,7 @@ function HopDong() {
   };
 
   const validateForm = () => {
-    const requiredFields = ['MaHopDong', 'NgayBatDau', 'NgayKetThuc', 'TienThue', 'NgayTinhTien', 'MaKhachHangs']
+    const requiredFields = ['MaHopDong', 'NgayBatDau', 'NgayKetThuc', 'TienThue', 'NgayTinhTien', 'KhachHangs']
     const newErrors = {}
 
     requiredFields.forEach(field => {
@@ -384,7 +426,48 @@ function HopDong() {
             </Grid>
           </Grid>
 
-          <strong>2. Khách hàng</strong>
+          <Grid container spacing={2} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <strong>2. Khách hàng</strong>
+              <Tooltip title="Thêm khách hàng">
+                <Button variant="contained" onClick={handleOpenAddKhachHang} sx={{ bgcolor: '#248F55' }}>
+                  <PersonAddAltIcon />
+                </Button>
+              </Tooltip>
+            </Box>
+            <TableContainer component={Paper}>
+              <Table sx={{ maxWidth: 600 }} aria-label="customized table">
+                <TableHead>
+                  <TableRow>
+                    <StyledTableCell>Tên cư dân</StyledTableCell>
+                    <StyledTableCell>Số điện thoại</StyledTableCell>
+                    <StyledTableCell>CMND/CCCD</StyledTableCell>
+                    <StyledTableCell align='center' sx={{ width: '100px' }}>Tháo tác</StyledTableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {khachHangDuocChon.map((kh) => (
+                    <TableRow key={kh.MaKhachHang}>
+                      <StyledTableCell>{kh.HoTen}</StyledTableCell>
+                      <StyledTableCell>{kh.SoDienThoai}</StyledTableCell>
+                      <StyledTableCell>{kh.CCCD}</StyledTableCell>
+                      <StyledTableCell align='center'>
+                        <Tooltip title="Xóa">
+                          <Button
+                            variant="contained"
+                            sx={{ bgcolor: '#EA5455' }}
+                            onClick={() => handleRemoveKhachHang(kh.MaKhachHang)}
+                          >
+                            <DeleteIcon fontSize='small' />
+                          </Button>
+                        </Tooltip>
+                      </StyledTableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Grid>
 
           <Grid container spacing={2} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <strong>3. Tiền thuê & Tiền cọc</strong>
@@ -405,7 +488,8 @@ function HopDong() {
                 <Grid item xs={4}>
                   <Autocomplete
                     sx={{ width: 'calc(520.67px/2)' }}
-                    disablePortal
+                    disablePortal={false}
+                    PopperComponent={(props) => <Popper {...props} disablePortal={false} />}
                     options={listChuKyThanhToan}
                     getOptionLabel={(option) => option.title || ''}
                     value={listChuKyThanhToan.find(t => t.title === formData.ChuKyThanhToan) || null}
@@ -457,7 +541,32 @@ function HopDong() {
             </Grid>
           </Grid>
 
-          <strong>4. Tiền phí dịch vụ</strong>
+          <Grid container spacing={2} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <strong>4. Tiền phí dịch vụ</strong>
+              <Tooltip title="Thêm dịch vụ">
+                <Button variant="contained" onClick={handleOpenAdd} sx={{ bgcolor: '#248F55' }}>
+                  <AddCircleOutlineIcon />
+                </Button>
+              </Tooltip>
+            </Box>
+            <TableContainer component={Paper}>
+              <Table sx={{ minWidth: 700 }} aria-label="customized table">
+                <TableHead>
+                  <TableRow>
+                    <StyledTableCell>Tên dịch vụ</StyledTableCell>
+                    <StyledTableCell align='right'>Giá tiền</StyledTableCell>
+                    <StyledTableCell>Công tơ</StyledTableCell>
+                    <StyledTableCell>Chỉ số đầu</StyledTableCell>
+                    <StyledTableCell>Ngày tính phí</StyledTableCell>
+                    <StyledTableCell align='center'>Thao tác</StyledTableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Grid>
 
         </DialogContent >
 
@@ -467,11 +576,63 @@ function HopDong() {
         </DialogActions>
       </Dialog >
 
+      {/* Thêm khách hàng vào hợp đồng */}
+      <Dialog open={openKhachHangDialog} onClose={handleCloseAddKhachHang} maxWidth="sm" fullWidth>
+        <DialogTitle>Danh sách khách hàng</DialogTitle>
+        <DialogContent component={Paper}>
+          <Table size="small" aria-label="Danh sách khách hàng"
+            sx={{
+              border: '1px solid #ccc',
+              '& th, & td': {
+                border: '1px solid #ccc',
+              },
+              '& thead th': {
+                backgroundColor: '#f5f5f5',
+              },
+            }}
+          >
+            <TableHead>
+              <TableRow>
+                <TableCell padding="checkbox">
+                  <Checkbox
+                    checked={isAllSelected}
+                    indeterminate={isIndeterminate}
+                    onChange={handleSelectAll}
+                  />
+                </TableCell>
+                <TableCell>Họ tên</TableCell>
+                <TableCell>Số điện thoại</TableCell>
+                <TableCell>CMND/CCCD</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {KhachHangs.map((kh) => (
+                <TableRow key={kh.MaKhachHang}>
+                  <TableCell padding="checkbox">
+                    <Checkbox
+                      checked={selectedKhachHangs.includes(kh.MaKhachHang)}
+                      onChange={() => handleToggleKhachHang(kh.MaKhachHang)}
+                    />
+                  </TableCell>
+                  <TableCell>{kh.HoTen}</TableCell>
+                  <TableCell>{kh.SoDienThoai}</TableCell>
+                  <TableCell>{kh.CCCD}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseAddKhachHang}>Hủy</Button>
+          <Button onClick={handleAddKhachHang}>Chọn</Button>
+        </DialogActions>
+      </Dialog>
 
+      {/* Thêm dịch vụ vào hợp đồng */}
 
       {/* Bảng */}
       <TableContainer component={Paper} sx={{ marginTop: '16px' }}>
-        <Table sx={{ minWidth: 700 }} aria-label="customized table">
+        <Table sx={{ minWidth: 700 }} aria-label="Danh sách hợp đồng">
           <TableHead>
             <TableRow>
               <StyledTableCell>Mã HĐ</StyledTableCell>
@@ -488,7 +649,7 @@ function HopDong() {
               <StyledTableRow key={row.MaHopDong}>
                 <StyledTableCell sx={{ p: '8px' }}>{row.MaHopDong}</StyledTableCell>
                 <StyledTableCell sx={{ p: '8px' }}>
-                  <Box>{row.KhachHangs[0].HoTen}</Box>
+                  {/* <Box>{row.KhachHangs[0].HoTen}</Box> */}
                   <Box sx={{ color: '#B9B9C3' }}>Tòa nhà: {row.MaNhaId}</Box>
                   <Box sx={{ color: '#B9B9C3' }}>Tầng: {row.MaPhongId}</Box>
                 </StyledTableCell>
