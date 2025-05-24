@@ -1,4 +1,4 @@
-import * as React from 'react'
+import { useState } from 'react'
 import { styled } from '@mui/material/styles'
 import {
   Table, TableBody, TableCell, tableCellClasses, TableContainer,
@@ -33,7 +33,7 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
 }))
 
 function PhiDichVu() {
-  const [rows, setRows] = React.useState(() =>
+  const [rows, setRows] = useState(() =>
     ToaNhaData.flatMap(toaNha =>
       toaNha.PhiDichVus.map(phiDichVu => ({
         ...phiDichVu,
@@ -41,8 +41,8 @@ function PhiDichVu() {
       }))
     )
   )
-  const [open, setOpen] = React.useState(false)
-  const [formData, setFormData] = React.useState({
+  const [open, setOpen] = useState(false)
+  const [formData, setFormData] = useState({
     MaDichVu: '',
     MaNhaId: '',
     TenDichVu: '',
@@ -51,12 +51,12 @@ function PhiDichVu() {
     DonViTinh: '',
     TenNha: ''
   })
-  const [errors, setErrors] = React.useState({})
-  const [editIndex, setEditIndex] = React.useState(null)
-  const [filterToaNha, setFilterToaNha] = React.useState(null)
-  const [filterLoai, setFilterLoai] = React.useState(null)
-  const [searchText, setSearchText] = React.useState('')
-  const [selectedTenNha, setSelectedTenNha] = React.useState(null)
+  const [errors, setErrors] = useState({})
+  const [editIndex, setEditIndex] = useState(null)
+  const [filterToaNha, setFilterToaNha] = useState(null)
+  const [filterLoai, setFilterLoai] = useState(null)
+  const [searchText, setSearchText] = useState('')
+  const [selectedTenNha, setSelectedTenNha] = useState(null)
   const confirm = useConfirm()
 
   const handleDelete = (MaDichVu) => {

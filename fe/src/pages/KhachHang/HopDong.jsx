@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { styled } from '@mui/material/styles'
 import {
   Table, TableBody, TableCell, tableCellClasses, TableContainer,
   TableHead, TableRow, Paper, Button, Box, TextField, Dialog, DialogActions,
-  DialogContent, DialogTitle, Grid, Switch, FormControlLabel
+  DialogContent, DialogTitle, Grid
 } from '@mui/material'
 import Autocomplete from '@mui/material/Autocomplete'
 import Popper from '@mui/material/Popper'
@@ -19,7 +19,6 @@ import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline'
 
 import { useConfirm } from 'material-ui-confirm'
 import { ToaNhaData, HopDongs, KhachHangs } from '../../apis/mock-data'
-import { DemoContainer } from '@mui/x-date-pickers/internals/demo'
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { DatePicker } from '@mui/x-date-pickers/DatePicker'
@@ -48,7 +47,6 @@ function HopDong() {
   const [listPhong, setListPhong] = useState([]);
 
   const [open, setOpen] = useState(false)
-  const [openClient, setOpenClient] = useState(false)
   const [formData, setFormData] = useState({
     MaHopDong: '', MaNhaId: '', MaPhongId: '', NgayBatDau: '', NgayKetThuc: '', TienThue: '', TienCoc: '', ChuKyThanhToan: '', NgayTinhTien: '', KhachHangs: '', MaDichVuIds: '', TrangThai: ''
   })
@@ -59,7 +57,13 @@ function HopDong() {
 
   const [openKhachHangDialog, setOpenKhachHangDialog] = useState(false)
   const [selectedKhachHangs, setSelectedKhachHangs] = useState([])
-  const [khachHangDuocChon, setKhachHangDuocChon] = useState([]); // khách hàng sẽ được hiển thị trong hợp đồng
+  const [khachHangDuocChon, setKhachHangDuocChon] = useState([]) // khách hàng sẽ được hiển thị trong hợp đồng
+
+  const [openDichVuDialog, setOpenDichVuDialog] = useState(false)
+  const [selectedDichVus, setSelectedDichVus] = useState([])
+  const [dichVuDuocChon, setDichVuDuocChon] = useState([])
+
+  //Các component thêm khách hàng vào hợp đồng
   const handleOpenAddKhachHang = () => {
     setOpenKhachHangDialog(true)
   }
@@ -91,6 +95,43 @@ function HopDong() {
     setOpenKhachHangDialog(false);
   };
 
+  //Các component thêm dịch vụ vào hợp đồng
+  const handleOpenAddDichVu = () => {
+    setOpenDichVuDialog(true)
+  }
+  const handleCloseAddDichVu = () => {
+    setOpenDichVuDialog(false)
+  }
+  // Lấy danh sách dịch vụ từ tòa nhà được chọn
+  const dichVusTuToaNha = useMemo(() => {
+    const toaNha = ToaNhaData.find(tn => tn.MaNha === formData.MaNhaId)
+    return toaNha?.PhiDichVus || []
+  }, [formData.MaNhaId])
+  // Logic chọn/bỏ chọn từng dịch vụ
+  const handleToggleDichVu = (maDichVu) => {
+    setSelectedDichVus(prev =>
+      prev.includes(maDichVu)
+        ? prev.filter(id => id !== maDichVu)
+        : [...prev, maDichVu]
+    );
+  };
+  // Chọn / Bỏ chọn tất cả dịch vụ
+  const isAllDichVuSelected = selectedDichVus.length === dichVusTuToaNha.length;
+  const isDichVuIndeterminate = selectedDichVus.length > 0 && !isAllDichVuSelected;
+
+  const handleSelectAllDichVus = () => {
+    if (isAllDichVuSelected) {
+      setSelectedDichVus([]);
+    } else {
+      setSelectedDichVus(dichVusTuToaNha.map(dv => dv.MaDichVu));
+    }
+  };
+  // Xác nhận và thêm dịch vụ đã chọn vào hợp đồng
+  const handleAddDichVu = () => {
+    const dichVuThem = dichVusTuToaNha.filter(dv => selectedDichVus.includes(dv.MaDichVu));
+    setDichVuDuocChon(dichVuThem);
+    setOpenDichVuDialog(false);
+  };
 
 
   const handleOpenEdit = (row) => {
@@ -131,6 +172,11 @@ function HopDong() {
   // Trong phần thêm hợp đồng
   const handleRemoveKhachHang = (maKhachHang) => {
     setKhachHangDuocChon(prev => prev.filter(kh => kh.MaKhachHang !== maKhachHang));
+  };
+
+  // Trong phần thêm dịch vụ
+  const handleRemoveDichVu = (maDichVu) => {
+    setDichVuDuocChon(prev => prev.filter(dv => dv.MaDichVu !== maDichVu));
   };
 
   const handleClose = () => setOpen(false)
@@ -545,7 +591,7 @@ function HopDong() {
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <strong>4. Tiền phí dịch vụ</strong>
               <Tooltip title="Thêm dịch vụ">
-                <Button variant="contained" onClick={handleOpenAdd} sx={{ bgcolor: '#248F55' }}>
+                <Button variant="contained" onClick={handleOpenAddDichVu} sx={{ bgcolor: '#248F55' }}>
                   <AddCircleOutlineIcon />
                 </Button>
               </Tooltip>
@@ -563,11 +609,81 @@ function HopDong() {
                   </TableRow>
                 </TableHead>
                 <TableBody>
+                  {dichVuDuocChon.map((dv) => (
+                    <TableRow key={dv.MaDichVu}>
+                      <StyledTableCell>{dv.TenDichVu}</StyledTableCell>
+                      <StyledTableCell>{dv.DonGia}/{dv.DonViTinh}</StyledTableCell>
+                      <StyledTableCell>
+                        <TextField
+                          size="small"
+                          variant="outlined"
+                          value={dv.MaCongTo || ''}
+                          onChange={(e) => {
+                            const newValue = e.target.value;
+                            setDichVuDuocChon((prev) =>
+                              prev.map((item) =>
+                                item.MaDichVu === dv.MaDichVu ? { ...item, MaCongTo: newValue } : item
+                              )
+                            );
+                          }}
+                          placeholder="Nhập mã công tơ"
+                        />
+                      </StyledTableCell>
+                      <StyledTableCell>
+                        <TextField
+                          size="small"
+                          variant="outlined"
+                          type="number"
+                          value={dv.ChiSoDau || ''}
+                          onChange={(e) => {
+                            const newValue = e.target.value;
+                            setDichVuDuocChon((prev) =>
+                              prev.map((item) =>
+                                item.MaDichVu === dv.MaDichVu ? { ...item, ChiSoDau: newValue } : item
+                              )
+                            );
+                          }}
+                          placeholder="Chỉ số đầu"
+                        />
+                      </StyledTableCell>
+                      <StyledTableCell>
+                        <LocalizationProvider dateAdapter={AdapterDayjs}>
+                          <DatePicker
+                            sx={{
+                              width: '140px',
+                              '& .MuiPickersSectionList-root': { py: '8.5px' }
+                            }}
+                            value={formData.NgayBatDau || null}
+                            onChange={(date) => setFormData(prev => ({ ...prev, NgayBatDau: date }))}
+                            format="DD/MM/YYYY"
+                            renderInput={(params) => (
+                              <TextField
+                                {...params}
+                                fullWidth
+                                error={!!errors.NgayBatDau}
+                                helperText={errors.NgayBatDau}
+                              />
+                            )}
+                          />
+                        </LocalizationProvider>
+                      </StyledTableCell>
+                      <StyledTableCell align='center'>
+                        <Tooltip title="Xóa">
+                          <Button
+                            variant="contained"
+                            sx={{ bgcolor: '#EA5455' }}
+                            onClick={() => handleRemoveDichVu(dv.MaDichVu)}
+                          >
+                            <DeleteIcon fontSize='small' />
+                          </Button>
+                        </Tooltip>
+                      </StyledTableCell>
+                    </TableRow>
+                  ))}
                 </TableBody>
               </Table>
             </TableContainer>
           </Grid>
-
         </DialogContent >
 
         <DialogActions>
@@ -629,6 +745,58 @@ function HopDong() {
       </Dialog>
 
       {/* Thêm dịch vụ vào hợp đồng */}
+      <Dialog open={openDichVuDialog} onClose={handleCloseAddDichVu} maxWidth="md" fullWidth>
+        <DialogTitle>Danh sách dịch vụ</DialogTitle>
+        <DialogContent component={Paper}>
+          <Table size="small" aria-label="Danh sách khách hàng"
+            sx={{
+              border: '1px solid #ccc',
+              '& th, & td': {
+                border: '1px solid #ccc',
+              },
+              '& thead th': {
+                backgroundColor: '#f5f5f5',
+              },
+            }}
+          >
+            <TableHead>
+              <TableRow>
+                <TableCell padding="checkbox">
+                  <Checkbox
+                    checked={isAllDichVuSelected}
+                    indeterminate={isDichVuIndeterminate}
+                    onChange={handleSelectAllDichVus}
+                  />
+                </TableCell>
+                <TableCell>Mã dịch vụ</TableCell>
+                <TableCell>Tên dịch vụ</TableCell>
+                <TableCell>Loại dịch vụ</TableCell>
+                <TableCell align='right'>Giá tiền</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {dichVusTuToaNha.map((dv) => (
+                <StyledTableRow key={dv.MaDichVu}>
+                  <TableCell padding="checkbox">
+                    <Checkbox
+                      checked={selectedDichVus.includes(dv.MaDichVu)}
+                      onChange={() => handleToggleDichVu(dv.MaDichVu)}
+                    />
+                  </TableCell>
+                  <TableCell sx={{ p: '8px' }}>{dv.MaDichVu}</TableCell>
+                  <TableCell sx={{ p: '8px' }}>{dv.TenDichVu}</TableCell>
+                  <TableCell sx={{ p: '8px' }}>{dv.LoaiDichVu}</TableCell>
+                  <TableCell align='right' sx={{ p: '8px' }}>{dv.DonGia}/{dv.DonViTinh}</TableCell>
+                </StyledTableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseAddDichVu}>Hủy</Button>
+          <Button onClick={handleAddDichVu}>Chọn</Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Bảng */}
       <TableContainer component={Paper} sx={{ marginTop: '16px' }}>
@@ -649,7 +817,7 @@ function HopDong() {
               <StyledTableRow key={row.MaHopDong}>
                 <StyledTableCell sx={{ p: '8px' }}>{row.MaHopDong}</StyledTableCell>
                 <StyledTableCell sx={{ p: '8px' }}>
-                  {/* <Box>{row.KhachHangs[0].HoTen}</Box> */}
+                  <Box>{row.KhachHangs[0].HoTen}</Box>
                   <Box sx={{ color: '#B9B9C3' }}>Tòa nhà: {row.MaNhaId}</Box>
                   <Box sx={{ color: '#B9B9C3' }}>Tầng: {row.MaPhongId}</Box>
                 </StyledTableCell>

@@ -1,4 +1,4 @@
-import * as React from 'react'
+import { useState, useEffect } from 'react'
 import { styled } from '@mui/material/styles'
 import {
   Table, TableBody, TableCell, tableCellClasses, TableContainer,
@@ -34,24 +34,24 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
 }))
 
 function ToaNha() {
-  const [rows, setRows] = React.useState(ToaNhaData || [])
-  const [open, setOpen] = React.useState(false)
-  const [formData, setFormData] = React.useState({
+  const [rows, setRows] = useState(ToaNhaData || [])
+  const [open, setOpen] = useState(false)
+  const [formData, setFormData] = useState({
     MaNha: '', TenNha: '', SoPhong: '', DiaChiNha: '', TrangThai: 'Hoạt động',
     TinhThanh: '', QuanHuyen: '', XaPhuong: '', Phongs: [], PhiDicuVus: []
   })
-  const [errors, setErrors] = React.useState({})
-  const [editId, setEditId] = React.useState(null)
-  const [filterStatus, setFilterStatus] = React.useState(null)
+  const [errors, setErrors] = useState({})
+  const [editId, setEditId] = useState(null)
+  const [filterStatus, setFilterStatus] = useState(null)
 
   // Mode dia chi
-  const [provinces, setProvinces] = React.useState([])
-  const [districts, setDistricts] = React.useState([])
-  const [wards, setWards] = React.useState([])
+  const [provinces, setProvinces] = useState([])
+  const [districts, setDistricts] = useState([])
+  const [wards, setWards] = useState([])
 
-  const [searchKeyword, setSearchKeyword] = React.useState('')
+  const [searchKeyword, setSearchKeyword] = useState('')
 
-  React.useEffect(() => {
+  useEffect(() => {
     setProvinces(getProvinces())
   }, [])
 

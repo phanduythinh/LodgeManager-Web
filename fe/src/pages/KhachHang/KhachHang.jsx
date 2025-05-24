@@ -1,4 +1,4 @@
-import * as React from 'react'
+import { useState, useEffect } from 'react'
 import { styled } from '@mui/material/styles'
 import {
   Table, TableBody, TableCell, tableCellClasses, TableContainer,
@@ -14,7 +14,7 @@ import BorderColorIcon from '@mui/icons-material/BorderColor'
 import SearchIcon from '@mui/icons-material/Search'
 import { useConfirm } from 'material-ui-confirm'
 import { getProvinces, getDistrictsByProvinceCode, getWardsByDistrictCode } from 'sub-vn'
-import { ToaNhaData } from '../../apis/mock-data'
+import { KhachHangs } from '../../apis/mock-data'
 
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
@@ -38,53 +38,24 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
   }
 }))
 
-const KhachHangs = [
-  {
-    MaKhachHang: 'KH-001',
-    HoTen: 'Nguyễn Văn A',
-    SoDienThoai: '0123456789',
-    Email: 'nguyenvana@gmail.com',
-    CCCD: '0342000012345',
-    GioiTinh: 'Nam',
-    NgaySinh: '11/11/1900',
-    DiaChiNha: 'Thôn Ba',
-    XaPhuong: 'Song Lãng',
-    QuanHuyen: 'Vũ Thư',
-    TinhThanh: 'Thái Bình'
-  },
-  {
-    MaKhachHang: 'KH-002',
-    HoTen: 'Lê Thị B',
-    SoDienThoai: '0987654321',
-    Email: 'lethib@gmail.com',
-    CCCD: '0123450342000',
-    GioiTinh: 'Nữ',
-    NgaySinh: '22/12/2001',
-    DiaChiNha: 'Thôn Trung',
-    XaPhuong: 'Song Lãng',
-    QuanHuyen: 'Vũ Thư',
-    TinhThanh: 'Thái Bình'
-  }
-]
-
 function KhachHang() {
-  const [rows, setRows] = React.useState(KhachHangs)
-  const [open, setOpen] = React.useState(false)
-  const [formData, setFormData] = React.useState({
+  const [rows, setRows] = useState(KhachHangs)
+  const [open, setOpen] = useState(false)
+  const [formData, setFormData] = useState({
     MaKhachHang: '', HoTen: '', SoDienThoai: '', Email: '', CCCD: '', GioiTinh: '', NgaySinh: '', DiaChiNha: '', XaPhuong: '', QuanHuyen: '', TinhThanh: ''
   })
-  const [errors, setErrors] = React.useState({})
-  const [editId, setEditId] = React.useState(null)
-  const [filterStatus, setFilterStatus] = React.useState(null)
+  const [errors, setErrors] = useState({})
+  const [editId, setEditId] = useState(null)
+  const [filterStatus, setFilterStatus] = useState(null)
 
   // Mode dia chi
-  const [provinces, setProvinces] = React.useState([])
-  const [districts, setDistricts] = React.useState([])
-  const [wards, setWards] = React.useState([])
+  const [provinces, setProvinces] = useState([])
+  const [districts, setDistricts] = useState([])
+  const [wards, setWards] = useState([])
 
-  const [searchKeyword, setSearchKeyword] = React.useState('')
+  const [searchKeyword, setSearchKeyword] = useState('')
 
-  React.useEffect(() => {
+  useEffect(() => {
     setProvinces(getProvinces())
   }, [])
 
