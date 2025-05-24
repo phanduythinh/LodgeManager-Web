@@ -29,7 +29,15 @@ export const ToaNhaData = [
         TrangThai: 'Đang ở'
       }
     ],
-    PhiDichVus: [] // chưa có dịch vụ
+    PhiDichVus: [
+      {
+        MaDichVu: 'DV-05',
+        TenDichVu: 'Gửi xe',
+        LoaiDichVu: 'Tiền trông xe',
+        DonGia: '50000',
+        DonViTinh: 'Xe'
+      }
+    ]
   },
   {
     MaNha: 'CH-002',
@@ -57,7 +65,7 @@ export const ToaNhaData = [
         TenDichVu: 'Điện',
         LoaiDichVu: 'Tiền điện',
         DonGia: '2500',
-        DonViTinh: 'đ/Kwh'
+        DonViTinh: 'Kwh'
       },
       {
         MaDichVu: 'DV-02',
@@ -71,14 +79,14 @@ export const ToaNhaData = [
         TenDichVu: 'Vệ sinh',
         LoaiDichVu: 'Tiền vệ sinh',
         DonGia: '30000',
-        DonViTinh: 'đ/người'
+        DonViTinh: 'Người'
       },
       {
         MaDichVu: 'DV-04',
         TenDichVu: 'Internet',
         LoaiDichVu: 'Tiền vệ sinh',
         DonGia: '100000',
-        DonViTinh: 'đ/phòng'
+        DonViTinh: 'Phòng'
       }
     ]
   }
@@ -183,5 +191,19 @@ export const HopDongs = [
         DonViTinh: 'đ/phòng'
       }
     ]
+  },
+  {
+    MaHopDong: 'HD-002',
+    MaNhaId: 'CH-002',
+    MaPhong: 'Phong 301',
+    NgayBatDau: '01/01/2024',
+    NgayKetThuc: '31/12/2024',
+    TienThue: '3000000',
+    TienCoc: '3000000',
+    ChuKyThanhToan: '1 tháng',
+    NgayTinhTien: '01',
+    TrangThai: 'Hết hạn',
+    KhachHangs: [],
+    DichVus: []
   }
 ];

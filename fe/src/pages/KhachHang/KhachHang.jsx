@@ -3,7 +3,7 @@ import { styled } from '@mui/material/styles'
 import {
   Table, TableBody, TableCell, tableCellClasses, TableContainer,
   TableHead, TableRow, Paper, Button, Box, TextField, Dialog, DialogActions,
-  DialogContent, DialogTitle, Grid, Switch, FormControlLabel
+  DialogContent, DialogTitle, Grid
 } from '@mui/material'
 import Autocomplete from '@mui/material/Autocomplete'
 import AddIcon from '@mui/icons-material/Add'
@@ -16,7 +16,6 @@ import { useConfirm } from 'material-ui-confirm'
 import { getProvinces, getDistrictsByProvinceCode, getWardsByDistrictCode } from 'sub-vn'
 import { ToaNhaData } from '../../apis/mock-data'
 
-import { DemoContainer } from '@mui/x-date-pickers/internals/demo'
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { DatePicker } from '@mui/x-date-pickers/DatePicker'
@@ -67,8 +66,6 @@ const KhachHangs = [
     TinhThanh: 'Thái Bình'
   }
 ]
-
-const listGioiTinh = [...new Set(KhachHangs.map(p => p.GioiTinh))].map(gioitinh => ({ title: gioitinh }))
 
 function KhachHang() {
   const [rows, setRows] = React.useState(KhachHangs)
@@ -258,6 +255,11 @@ function KhachHang() {
       return matchesStatus && matchesSearch
     })
     : []
+
+  const listGioiTinh = [
+    { title: 'Nam' },
+    { title: 'Nữ' }
+  ]
 
   return (
     <Box sx={{ m: 1 }}>

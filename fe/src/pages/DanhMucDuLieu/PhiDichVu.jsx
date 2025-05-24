@@ -32,45 +32,15 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
   }
 }))
 
-const PhiDichVus = [
-  {
-    MaDichVu: 'DV-01',
-    MaNhaId: 'CH-001',
-    TenDichVu: 'Điện',
-    LoaiDichVu: 'Tiền điện',
-    DonGia: '2500',
-    DonViTinh: 'đ/Kwh'
-  },
-  {
-    MaDichVu: 'DV-02',
-    MaNhaId: 'CH-001',
-    TenDichVu: 'Nước',
-    LoaiDichVu: 'Tiền nước',
-    DonGia: '9000',
-    DonViTinh: 'm³'
-  },
-  {
-    MaDichVu: 'DV-03',
-    MaNhaId: 'CH-001',
-    TenDichVu: 'Vệ sinh',
-    LoaiDichVu: 'Tiền vệ sinh',
-    DonGia: '30000',
-    DonViTinh: 'đ/người'
-  },
-  {
-    MaDichVu: 'DV-04',
-    MaNhaId: 'CH-001',
-    TenDichVu: 'Internet',
-    LoaiDichVu: 'Tiền Internet',
-    DonGia: '100000',
-    DonViTinh: 'đ/phòng'
-  }
-]
-
-
-
 function PhiDichVu() {
-  const [rows, setRows] = React.useState(ToaNhaData)
+  const [rows, setRows] = React.useState(() =>
+    ToaNhaData.flatMap(toaNha =>
+      toaNha.PhiDichVus.map(phiDichVu => ({
+        ...phiDichVu,
+        TenNha: toaNha.TenNha
+      }))
+    )
+  )
   const [open, setOpen] = React.useState(false)
   const [formData, setFormData] = React.useState({
     MaDichVu: '',
@@ -78,13 +48,15 @@ function PhiDichVu() {
     TenDichVu: '',
     LoaiDichVu: '',
     DonGia: '',
-    DonViTinh: ''
+    DonViTinh: '',
+    TenNha: ''
   })
   const [errors, setErrors] = React.useState({})
   const [editIndex, setEditIndex] = React.useState(null)
   const [filterToaNha, setFilterToaNha] = React.useState(null)
   const [filterLoai, setFilterLoai] = React.useState(null)
   const [searchText, setSearchText] = React.useState('')
+  const [selectedTenNha, setSelectedTenNha] = React.useState(null)
   const confirm = useConfirm()
 
   const handleDelete = (MaDichVu) => {
@@ -98,7 +70,8 @@ function PhiDichVu() {
       TenDichVu: '',
       LoaiDichVu: '',
       DonGia: '',
-      DonViTinh: ''
+      DonViTinh: '',
+      TenNha: ''
     })
     setErrors({})
     setEditIndex(null)
@@ -123,15 +96,18 @@ function PhiDichVu() {
   }
 
   const handleAutoChange = (name, value) => {
-    setFormData(prev => ({ ...prev, [name]: value || '' }))
-    if ((value || '').trim() !== '') {
-      setErrors(prev => ({ ...prev, [name]: '' }))
+    const newValue = value || ''
+    if (formData[name] !== newValue) {
+      setFormData(prev => ({ ...prev, [name]: newValue }))
+      if (newValue.trim() !== '') {
+        setErrors(prev => ({ ...prev, [name]: '' }))
+      }
     }
   }
 
 
   const validateForm = () => {
-    const requiredFields = ['MaDichVu', 'MaNhaId', 'TenDichVu', 'LoaiDichVu', 'DonGia', 'DonViTinh']
+    const requiredFields = ['MaDichVu', 'TenNha', 'TenDichVu', 'LoaiDichVu', 'DonGia', 'DonViTinh']
     const newErrors = {}
     requiredFields.forEach(field => {
       if (!formData[field] || formData[field].toString().trim() === '') {
@@ -168,7 +144,7 @@ function PhiDichVu() {
   }
 
   const filteredRows = rows.filter(row => {
-    if (filterToaNha && row.MaNhaId !== filterToaNha) return false
+    if (filterToaNha && row.TenNha !== filterToaNha) return false
     if (filterLoai && row.LoaiDichVu !== filterLoai) return false
     if (searchText.trim() !== '') {
       const text = searchText.toLowerCase()
@@ -220,7 +196,11 @@ function PhiDichVu() {
         <Autocomplete
           options={listToaNha}
           getOptionLabel={(option) => option.title}
-          onChange={(e, value) => setFilterToaNha(value?.title || null)}
+          onChange={(e, value) => {
+            const tenNha = value?.title || null
+            setSelectedTenNha(tenNha)
+            setFilterToaNha(tenNha)
+          }}
           sx={{
             width: '33.3333333333%',
             '& .MuiInputBase-root': {
@@ -231,7 +211,7 @@ function PhiDichVu() {
               top: -7.5 // tuỳ chỉnh nếu label bị lệch
             }
           }}
-          renderInput={(params) => <TextField {...params} label="Tòa nhà" />}
+          renderInput={(params) => <TextField {...params} label="Tòa nhà" variant="outlined" />}
           clearOnEscape
         />
         <Autocomplete
@@ -305,7 +285,10 @@ function PhiDichVu() {
               </Grid>
               <Grid item xs={4} sx={{ width: 'calc(544px/2)' }}>
                 <Autocomplete
-                  disablePortal
+                  disablePortal={false}
+                  PopperProps={{
+                    disablePortal: false,
+                  }}
                   options={listLoaiDichVu}
                   getOptionLabel={(option) => option.title}
                   value={listLoaiDichVu.find(t => t.title === formData.LoaiDichVu) || null}
@@ -323,7 +306,7 @@ function PhiDichVu() {
             </Grid>
 
             <Grid container spacing={2} sx={{ gap: 1 }}>
-              <Grid item xs={4} sx={{ width: 'calc(544px/2)' }}>
+              <Grid item xs={6} sx={{ width: 'calc(544px/2)' }}>
                 <TextField
                   label="Đơn giá (*)"
                   fullWidth
@@ -334,9 +317,12 @@ function PhiDichVu() {
                   helperText={errors.DonGia}
                 />
               </Grid>
-              <Grid item xs={4} sx={{ width: 'calc(544px/2)' }}>
+              <Grid item xs={6} sx={{ width: 'calc(544px/2)' }}>
                 <Autocomplete
-                  disablePortal
+                  disablePortal={false}
+                  PopperProps={{
+                    disablePortal: false,
+                  }}
                   options={listDonViTinh}
                   getOptionLabel={(option) => option.title}
                   value={listDonViTinh.find(t => t.title === formData.DonViTinh) || null}
@@ -357,14 +343,14 @@ function PhiDichVu() {
                 disablePortal
                 options={listToaNha}
                 getOptionLabel={(option) => option.title}
-                value={listToaNha.find(t => t.title === formData.MaNhaId) || null}
-                onChange={(e, value) => handleAutoChange('MaNhaId', value?.title || '')}
+                value={listToaNha.find(t => t.title === formData.TenNha) || null}
+                onChange={(e, value) => handleAutoChange('TenNha', value?.title || '')}
                 renderInput={(params) => (
                   <TextField
                     {...params}
                     label="Tòa nhà sử dụng (*)"
-                    error={!!errors.MaNhaId}
-                    helperText={errors.MaNhaId}
+                    error={!!errors.TenNha}
+                    helperText={errors.TenNha}
                   />
                 )}
               />
@@ -395,9 +381,12 @@ function PhiDichVu() {
             {filteredRows.map((row, index) => (
               <StyledTableRow key={row.MaDichVu}>
                 <StyledTableCell sx={{ p: '8px' }}>{row.MaDichVu}</StyledTableCell>
-                <StyledTableCell sx={{ p: '8px' }}>{row.TenDichVu}</StyledTableCell>
+                <StyledTableCell sx={{ p: '8px' }}>
+                  {row.TenDichVu}
+                  <Box sx={{ display: 'none' }}>{row.TenNha}</Box>
+                </StyledTableCell>
                 <StyledTableCell sx={{ p: '8px' }}>{row.LoaiDichVu}</StyledTableCell>
-                <StyledTableCell align='right' sx={{ p: '8px' }}>{row.DonGia} {row.DonViTinh}</StyledTableCell>
+                <StyledTableCell align='right' sx={{ p: '8px' }}>{row.DonGia}/{row.DonViTinh}</StyledTableCell>
                 <StyledTableCell sx={{ p: '8px' }}>
                   <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
                     <Tooltip title="Sửa">
