@@ -203,7 +203,21 @@ export const HopDongs = [
     ChuKyThanhToan: '1 tháng',
     NgayTinhTien: '01',
     TrangThai: 'Hết hạn',
-    KhachHangs: [],
+    KhachHangs: [
+       {
+        MaKhachHang: 'KH-003',
+        HoTen: 'Nguyễn Lê A',
+        SoDienThoai: '0123456789',
+        Email: 'nguyenvana@gmail.com',
+        CCCD: '0342000012345',
+        GioiTinh: 'Nam',
+        NgaySinh: '11/11/1111',
+        DiaChiNha: 'Thôn Ba',
+        XaPhuong: 'Song Lãng',
+        QuanHuyen: 'Vũ Thư',
+        TinhThanh: 'Thái Bình'
+      },
+    ],
     DichVus: []
   }
 ];
