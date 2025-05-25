@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
-import { styled } from '@mui/material/styles'
+import { StyledTableCell, StyledTableRow } from '~/components/StyledTable'
 import {
-  Table, TableBody, TableCell, tableCellClasses, TableContainer,
+  Table, TableBody, TableContainer,
   TableHead, TableRow, Paper, Button, Box, TextField, Dialog, DialogActions,
   DialogContent, DialogTitle, Grid
 } from '@mui/material'
@@ -14,29 +14,12 @@ import BorderColorIcon from '@mui/icons-material/BorderColor'
 import SearchIcon from '@mui/icons-material/Search'
 import { useConfirm } from 'material-ui-confirm'
 import { getProvinces, getDistrictsByProvinceCode, getWardsByDistrictCode } from 'sub-vn'
-import { KhachHangs } from '../../apis/mock-data'
+import { KhachHangs } from '~/apis/mock-data'
 
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { DatePicker } from '@mui/x-date-pickers/DatePicker'
 import dayjs from 'dayjs'
-
-const StyledTableCell = styled(TableCell)(() => ({
-  [`&.${tableCellClasses.head}`]: {
-    backgroundColor: '#a8d8fb',
-    borderRight: '1px solid #e0e0e0'
-  },
-  [`&.${tableCellClasses.body}`]: {
-    fontSize: 14,
-    borderRight: '1px solid #e0e0e0'
-  }
-}))
-
-const StyledTableRow = styled(TableRow)(({ theme }) => ({
-  '&:nth-of-type(odd)': {
-    backgroundColor: theme.palette.action.hover
-  }
-}))
 
 function KhachHang() {
   const [rows, setRows] = useState(KhachHangs)

@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
-import { styled } from '@mui/material/styles'
+import { StyledTableCell, StyledTableRow } from '~/components/StyledTable'
 import {
-  Table, TableBody, TableCell, tableCellClasses, TableContainer,
+  Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, Paper, Button, Box, TextField, Dialog, DialogActions,
   DialogContent, DialogTitle, Grid
 } from '@mui/material'
@@ -18,28 +18,12 @@ import PersonAddAltIcon from '@mui/icons-material/PersonAddAlt'
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline'
 
 import { useConfirm } from 'material-ui-confirm'
-import { ToaNhaData, HopDongs, KhachHangs } from '../../apis/mock-data'
+import { ToaNhaData, HopDongs, KhachHangs } from '~/apis/mock-data'
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { DatePicker } from '@mui/x-date-pickers/DatePicker'
 import dayjs from 'dayjs'
-
-const StyledTableCell = styled(TableCell)(() => ({
-  [`&.${tableCellClasses.head}`]: {
-    backgroundColor: '#a8d8fb',
-    borderRight: '1px solid #e0e0e0'
-  },
-  [`&.${tableCellClasses.body}`]: {
-    fontSize: 14,
-    borderRight: '1px solid #e0e0e0'
-  }
-}))
-
-const StyledTableRow = styled(TableRow)(({ theme }) => ({
-  '&:nth-of-type(odd)': {
-    backgroundColor: theme.palette.action.hover
-  }
-}))
+import { formatCurrency } from '~/components/formatCurrency'
 
 function HopDong() {
   const [rows, setRows] = useState(HopDongs)
@@ -48,7 +32,7 @@ function HopDong() {
 
   const [open, setOpen] = useState(false)
   const [formData, setFormData] = useState({
-    MaHopDong: '', MaNhaId: '', MaPhongId: '', NgayBatDau: '', NgayKetThuc: '', TienThue: '', TienCoc: '', ChuKyThanhToan: '', NgayTinhTien: '', KhachHangs: '', MaDichVuIds: '', TrangThai: ''
+    MaHopDong: '', TenNha: '', TenPhong: '', NgayBatDau: '', NgayKetThuc: '', TienThue: '', TienCoc: '', ChuKyThanhToan: '', NgayTinhTien: '', KhachHangs: [], DichVus: [], TrangThai: ''
   })
   const [errors, setErrors] = useState({})
   const [editId, setEditId] = useState(null)
@@ -57,7 +41,7 @@ function HopDong() {
 
   const [openKhachHangDialog, setOpenKhachHangDialog] = useState(false)
   const [selectedKhachHangs, setSelectedKhachHangs] = useState([])
-  const [khachHangDuocChon, setKhachHangDuocChon] = useState([]) // khách hàng sẽ được hiển thị trong hợp đồng
+  const [khachHangDuocChon, setKhachHangDuocChon] = useState([])
 
   const [openDichVuDialog, setOpenDichVuDialog] = useState(false)
   const [selectedDichVus, setSelectedDichVus] = useState([])
@@ -92,6 +76,10 @@ function HopDong() {
   const handleAddKhachHang = () => {
     const khachDuocThem = KhachHangs.filter(kh => selectedKhachHangs.includes(kh.MaKhachHang));
     setKhachHangDuocChon(khachDuocThem);
+    setFormData(prev => ({
+      ...prev,
+      KhachHangs: khachDuocThem.map(kh => kh.MaKhachHang)
+    }));
     setOpenKhachHangDialog(false);
   };
 
@@ -130,38 +118,56 @@ function HopDong() {
   const handleAddDichVu = () => {
     const dichVuThem = dichVusTuToaNha.filter(dv => selectedDichVus.includes(dv.MaDichVu));
     setDichVuDuocChon(dichVuThem);
+    setFormData(prev => ({
+      ...prev,
+      DichVus: dichVuThem.map(dv => dv.MaDichVu)
+    }));
     setOpenDichVuDialog(false);
   };
 
-
   const handleOpenEdit = (row) => {
+    const selectedToaNha = ToaNhaData.find(tn => tn.TenNha === row.TenNha);
+    const initialPhongs = selectedToaNha ? selectedToaNha.Phongs : [];
+    setListPhong(initialPhongs);
+
     setFormData({
       MaHopDong: row.MaHopDong || '',
-      MaNhaId: row.MaNha || '',       // cập nhật đúng mã tòa nhà
-      MaPhongId: row.MaPhong || '',   // cập nhật đúng mã phòng
+      MaNhaId: selectedToaNha?.MaNha || '',
+      MaPhongId: initialPhongs.find(p => p.TenPhong === row.TenPhong)?.MaPhong || '',
+      TenNha: row.TenNha || '',
+      TenPhong: row.TenPhong || '',
       NgayBatDau: row.NgayBatDau ? dayjs(row.NgayBatDau, 'DD/MM/YYYY') : null,
       NgayKetThuc: row.NgayKetThuc ? dayjs(row.NgayKetThuc, 'DD/MM/YYYY') : null,
       NgayTinhTien: row.NgayTinhTien ? dayjs(row.NgayTinhTien, 'DD/MM/YYYY') : null,
       TienThue: row.TienThue || '',
       TienCoc: row.TienCoc || '',
       ChuKyThanhToan: row.ChuKyThanhToan || '',
-      KhachHangs: row.KhachHangs || '',
-      MaDichVuIds: row.MaDichVuIds || '',
+      KhachHangs: row.KhachHangs || [],
+      DichVus: row.DichVus || [],
       TrangThai: row.TrangThai || ''
     });
 
-    setErrors({});
-    setEditId(row.MaHopDong);  // nên là MaHopDong chứ không phải MaKhachHang
-    setOpen(true);
+    setKhachHangDuocChon(row.KhachHangs || []); // Khách hàng đã có trong hợp đồng
+    setSelectedKhachHangs(row.KhachHangs.map(kh => kh.MaKhachHang) || []); // Lấy MaKhachHang cho dialog chọn
+    setDichVuDuocChon(row.DichVus || []); // Dịch vụ đã có trong hợp đồng
+    setSelectedDichVus(row.DichVus.map(dv => dv.MaDichVu) || []); // Lấy MaDichVu cho dialog chọn
+    setEditId(row.MaHopDong)
+    setErrors({})
+    setOpen(true)
   };
 
 
   const handleOpenAdd = () => {
     setFormData({
-      MaHopDong: '', MaNhaId: '', MaPhongId: '', NgayBatDau: '', NgayKetThuc: '', TienThue: '', TienCoc: '', ChuKyThanhToan: '', NgayTinhTien: '', KhachHangs: '', MaDichVuIds: '', TrangThai: ''
+      MaHopDong: '', TenNha: '', MaNhaId: '', TenPhong: '', MaPhongId: '', NgayBatDau: null, NgayKetThuc: null, TienThue: '', TienCoc: '', ChuKyThanhToan: '', NgayTinhTien: null, KhachHangs: [], DichVus: [], TrangThai: ''
     })
     setErrors({})
     setEditId(null)
+    setKhachHangDuocChon([])
+    setDichVuDuocChon([])
+    setSelectedKhachHangs([])
+    setSelectedDichVus([])
+    setListPhong([])
     setOpen(true)
   }
 
@@ -171,7 +177,11 @@ function HopDong() {
 
   // Trong phần thêm hợp đồng
   const handleRemoveKhachHang = (maKhachHang) => {
-    setKhachHangDuocChon(prev => prev.filter(kh => kh.MaKhachHang !== maKhachHang));
+    setKhachHangDuocChon(prev => {
+      const updated = prev.filter(kh => kh.MaKhachHang !== maKhachHang)
+      setFormData(prevForm => ({ ...prevForm, KhachHangs: updated.map(kh => kh.MaKhachHang) }))
+      return updated
+    });
   };
 
   // Trong phần thêm dịch vụ
@@ -179,7 +189,17 @@ function HopDong() {
     setDichVuDuocChon(prev => prev.filter(dv => dv.MaDichVu !== maDichVu));
   };
 
-  const handleClose = () => setOpen(false)
+  const handleClose = () => {
+    setOpen(false) // đóng dialog
+    setFormData({}) // reset form
+    setErrors({})
+    setKhachHangDuocChon([]) // reset khách hàng được chọn
+    setDichVuDuocChon([]) // reset dịch vụ được chọn
+    setSelectedKhachHangs([])
+    setSelectedDichVus([])
+    setEditId(null) // nếu bạn đang ở chế độ sửa thì cũng reset luôn
+    setListPhong([])
+  }
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -193,28 +213,50 @@ function HopDong() {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
-      ...(field === 'MaNhaId' && { MaPhongId: '' }) // reset phòng khi đổi tòa nhà
+      ...(field === 'MaNhaId' && { MaPhongId: '', TenPhong: '' }) // reset phòng khi đổi tòa nhà
     }));
 
     if (field === 'MaNhaId') {
-      const selectedToaNha = listToaNha.find(n => n.MaNha === value);
+      const selectedToaNha = listToaNha.find((n) => n.MaNha === value);
       if (selectedToaNha) {
         setListPhong(selectedToaNha.Phongs || []);
+        setFormData((prev) => ({ ...prev, TenNha: selectedToaNha.TenNha }));
       } else {
         setListPhong([]);
+        setFormData((prev) => ({ ...prev, TenNha: '' }));
       }
+    } else if (field === 'MaPhongId') {
+      const selectedPhong = listPhong.find((p) => p.MaPhong === value);
+      if (selectedPhong) {
+        setFormData((prev) => ({ ...prev, TenPhong: selectedPhong.TenPhong }));
+      } else {
+        setFormData((prev) => ({ ...prev, TenPhong: '' }));
+      }
+    }
+
+    // Clear error for the field if a value is selected
+    if (value) {
+      setErrors((prev) => ({ ...prev, [field]: '' }));
     }
   };
 
   const validateForm = () => {
-    const requiredFields = ['MaHopDong', 'NgayBatDau', 'NgayKetThuc', 'TienThue', 'NgayTinhTien', 'KhachHangs']
+    const requiredFields = ['MaHopDong', 'NgayBatDau', 'NgayKetThuc', 'TienThue', 'NgayTinhTien', 'MaNhaId', 'MaPhongId', 'ChuKyThanhToan']
     const newErrors = {}
 
     requiredFields.forEach(field => {
-      if (!formData[field] || formData[field].trim() === '') {
-        newErrors[field] = 'Thông tin bắt buộc'
+      if (!formData[field] ||
+        (typeof formData[field] === 'string' && formData[field].trim() === '') ||
+        (Array.isArray(formData[field]) && formData[field].length === 0)) {
+        newErrors[field] = 'Thông tin bắt buộc';
       }
     })
+    if (khachHangDuocChon.length === 0) {
+      newErrors.KhachHangs = 'Cần thêm ít nhất một khách hàng';
+    }
+    if (dichVuDuocChon.length === 0) {
+      newErrors.DichVus = 'Cần thêm ít nhất một dịch vụ';
+    }
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
@@ -223,8 +265,22 @@ function HopDong() {
   const handleSubmit = () => {
     if (!validateForm()) return;
 
+    const selectedToaNha = listToaNha.find(n => n.MaNha === formData.MaNhaId)
+    const selectedPhong = listPhong.find(p => p.MaPhong === formData.MaPhongId)
+
     const newData = {
       ...formData,
+      TenNha: selectedToaNha ? selectedToaNha.TenNha : '',
+      MaNhaId: selectedToaNha ? selectedToaNha.MaNha : '', // Đảm bảo lưu MaNhaId
+      TenPhong: selectedPhong ? selectedPhong.TenPhong : '',
+      MaPhongId: selectedPhong ? selectedPhong.MaPhong : '', // Đảm bảo lưu MaPhongId
+      KhachHangs: khachHangDuocChon, // Lưu toàn bộ đối tượng khách hàng
+      DichVus: dichVuDuocChon.map(dv => ({ // Lưu toàn bộ đối tượng dịch vụ với các trường MaCongTo, ChiSoDau, NgayTinhPhi
+        ...dv,
+        MaCongTo: dv.MaCongTo || '',
+        ChiSoDau: dv.ChiSoDau || '',
+        NgayTinhPhi: dv.NgayTinhPhi // Dùng định dạng đã có hoặc format lại nếu cần
+      })),
       NgayBatDau: formData.NgayBatDau && formData.NgayBatDau.format
         ? formData.NgayBatDau.format('DD/MM/YYYY')
         : formData.NgayBatDau,
@@ -233,7 +289,8 @@ function HopDong() {
         : formData.NgayKetThuc,
       NgayTinhTien: formData.NgayTinhTien && formData.NgayTinhTien.format
         ? formData.NgayTinhTien.format('DD/MM/YYYY')
-        : formData.NgayTinhTien
+        : formData.NgayTinhTien,
+      TrangThai: 'Còn hạn' // Mặc định trạng thái là 'Còn hạn' khi thêm hoặc sửa
     };
 
     if (editId === null) {
@@ -259,6 +316,7 @@ function HopDong() {
     }
 
     setOpen(false);
+    handleClose(); // Gọi handleClose để reset toàn bộ form và state
   };
 
   const confirmDeleteKhachHang = useConfirm()
@@ -275,15 +333,18 @@ function HopDong() {
 
   // Tìm kiếm
   const filteredRows = Array.isArray(rows)
-    ? rows.filter(row => {
-      const matchesStatus = filterStatus ? row.TrangThai === filterStatus : true
-      const keyword = searchKeyword.toLowerCase()
+    ? rows.filter((row) => {
+      const matchesStatus = filterStatus ? row.TrangThai === filterStatus : true;
+      const keyword = searchKeyword.toLowerCase();
       const matchesSearch =
-        row.MaHopDong.toLowerCase().includes(keyword) ||
-        row.TrangThai.toLowerCase().includes(keyword)
-      return matchesStatus && matchesSearch
+        (row.MaHopDong?.toLowerCase().includes(keyword) || false) ||
+        (row.TenNha?.toLowerCase().includes(keyword) || false) || // Tìm kiếm theo tên tòa nhà
+        (row.TenPhong?.toLowerCase().includes(keyword) || false) || // Tìm kiếm theo tên phòng
+        (row.KhachHangs[0]?.HoTen?.toLowerCase().includes(keyword) || false) || // Tìm kiếm theo tên khách hàng đại diện
+        (row.TrangThai?.toLowerCase().includes(keyword) || false);
+      return matchesStatus && matchesSearch;
     })
-    : []
+    : [];
 
   const listChuKyThanhToan = [
     { title: '1 tháng' },
@@ -818,10 +879,10 @@ function HopDong() {
                 <StyledTableCell sx={{ p: '8px' }}>{row.MaHopDong}</StyledTableCell>
                 <StyledTableCell sx={{ p: '8px' }}>
                   <Box>{row.KhachHangs[0].HoTen}</Box>
-                  <Box sx={{ color: '#B9B9C3' }}>Tòa nhà: {row.MaNhaId}</Box>
-                  <Box sx={{ color: '#B9B9C3' }}>Tầng: {row.MaPhongId}</Box>
+                  <Box sx={{ color: '#B9B9C3' }}>Tòa nhà: {row.TenNha}</Box>
+                  <Box sx={{ color: '#B9B9C3' }}>{row.TenPhong}</Box>
                 </StyledTableCell>
-                <StyledTableCell sx={{ p: '8px' }}>{row.TienThue}</StyledTableCell>
+                <StyledTableCell sx={{ p: '8px' }}>{formatCurrency(row.TienThue)}</StyledTableCell>
                 <StyledTableCell sx={{ p: '8px' }}>{row.NgayBatDau}</StyledTableCell>
                 <StyledTableCell sx={{ p: '8px' }}>{row.NgayKetThuc}</StyledTableCell>
                 <StyledTableCell sx={{ p: '8px' }}>
