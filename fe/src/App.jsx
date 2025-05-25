@@ -2,7 +2,7 @@ import * as React from 'react'
 import PhiDichVu from './pages/DanhMucDuLieu/PhiDichVu'
 import Phong from './pages/DanhMucDuLieu/Phong'
 import ToaNha from './pages/DanhMucDuLieu/ToaNha'
-import HopDong from './pages/KhachHang/HopDong'
+import HopDong from '~/pages/KhachHang/HopDong'
 import KhachHang from './pages/KhachHang/KhachHang'
 
 import PropTypes from 'prop-types'

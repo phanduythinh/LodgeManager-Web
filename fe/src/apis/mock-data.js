@@ -3,91 +3,34 @@ export const ToaNhaData = [
     MaNha: 'CH-001',
     TenNha: 'Ben Hou',
     DiaChiNha: '85 phố Viên',
-    QuanHuyen: 'Bắc Từ Liêm',
-    TinhThanh: 'Hà Nội',
-    XaPhuong: 'Cổ Nhuế 2',
+    XaPhuong: 'Phường Cổ Nhuế 2',
+    QuanHuyen: 'Quận Bắc Từ Liêm',
+    TinhThanh: 'Thành phố Hà Nội',
     TrangThai: 'Hoạt động',
     Phongs: [
-      {
-        MaPhong: 'P.101',
-        TenPhong: 'Phòng 101',
-        Tang: 'Tầng 1',
-        GiaThue: '3000000',
-        DatCoc: '3000000',
-        DienTich: '20',
-        SoKhachToiDa: '3',
-        TrangThai: 'Đang ở'
-      },
-      {
-        MaPhong: 'P.201',
-        TenPhong: 'Phòng 201',
-        Tang: 'Tầng 2',
-        GiaThue: '2900000',
-        DatCoc: '2900000',
-        DienTich: '20',
-        SoKhachToiDa: '3',
-        TrangThai: 'Đang ở'
-      }
+      { MaPhong: 'P.101', TenPhong: 'Phòng 101', Tang: 'Tầng 1', GiaThue: '3000000', DatCoc: '3000000', DienTich: '20', SoKhachToiDa: '3', TrangThai: 'Đang ở' },
+      { MaPhong: 'P.201', TenPhong: 'Phòng 201', Tang: 'Tầng 2', GiaThue: '2900000', DatCoc: '2900000', DienTich: '20', SoKhachToiDa: '3', TrangThai: 'Đang ở' }
     ],
     PhiDichVus: [
-      {
-        MaDichVu: 'DV-05',
-        TenDichVu: 'Gửi xe',
-        LoaiDichVu: 'Tiền trông xe',
-        DonGia: '50000',
-        DonViTinh: 'Xe'
-      }
+      { MaDichVu: 'DV-05', TenDichVu: 'Gửi xe', LoaiDichVu: 'Tiền gửi xe', DonGia: '50000', DonViTinh: 'Xe' }
     ]
   },
   {
     MaNha: 'CH-002',
     TenNha: 'Hom Tay',
-    DiaChiNha: '100 phố Viên',
-    QuanHuyen: 'Bắc Từ Liêm',
-    TinhThanh: 'Hà Nội',
-    XaPhuong: 'Cổ Nhuế 2',
+    DiaChiNha: '100 phố Phúc',
+    XaPhuong: 'Phường Phúc Xá',
+    QuanHuyen: 'Quận Ba Đình',
+    TinhThanh: 'Thành phố Hà Nội',
     TrangThai: 'Không hoạt động',
     Phongs: [
-      {
-        MaPhong: 'P.301',
-        TenPhong: 'Phòng 301',
-        Tang: 'Tầng 3',
-        GiaThue: '2800000',
-        DatCoc: '2800000',
-        DienTich: '20',
-        SoKhachToiDa: '3',
-        TrangThai: 'Còn trống'
-      }
+      { MaPhong: 'P.301', TenPhong: 'Phòng 301', Tang: 'Tầng 3', GiaThue: '2800000', DatCoc: '2800000', DienTich: '20', SoKhachToiDa: '3', TrangThai: 'Còn trống' }
     ],
     PhiDichVus: [
-      {
-        MaDichVu: 'DV-01',
-        TenDichVu: 'Điện',
-        LoaiDichVu: 'Tiền điện',
-        DonGia: '2500',
-        DonViTinh: 'Kwh'
-      },
-      {
-        MaDichVu: 'DV-02',
-        TenDichVu: 'Nước',
-        LoaiDichVu: 'Tiền nước',
-        DonGia: '9000',
-        DonViTinh: 'm³'
-      },
-      {
-        MaDichVu: 'DV-03',
-        TenDichVu: 'Vệ sinh',
-        LoaiDichVu: 'Tiền vệ sinh',
-        DonGia: '30000',
-        DonViTinh: 'Người'
-      },
-      {
-        MaDichVu: 'DV-04',
-        TenDichVu: 'Internet',
-        LoaiDichVu: 'Tiền vệ sinh',
-        DonGia: '100000',
-        DonViTinh: 'Phòng'
-      }
+      { MaDichVu: 'DV-01', TenDichVu: 'Điện', LoaiDichVu: 'Tiền điện', DonGia: '2500', DonViTinh: 'Kwh' },
+      { MaDichVu: 'DV-02', TenDichVu: 'Nước', LoaiDichVu: 'Tiền nước', DonGia: '9000', DonViTinh: 'm³' },
+      { MaDichVu: 'DV-03', TenDichVu: 'Vệ sinh', LoaiDichVu: 'Tiền vệ sinh', DonGia: '30000', DonViTinh: 'Người' },
+      { MaDichVu: 'DV-04', TenDichVu: 'Internet', LoaiDichVu: 'Tiền vệ sinh', DonGia: '100000', DonViTinh: 'Phòng' }
     ]
   }
 ];
@@ -100,11 +43,11 @@ export const KhachHangs = [
     Email: 'nguyenvana@gmail.com',
     CCCD: '0342000012345',
     GioiTinh: 'Nam',
-    NgaySinh: '11/11/1111',
+    NgaySinh: '11/11/2001',
     DiaChiNha: 'Thôn Ba',
-    XaPhuong: 'Song Lãng',
-    QuanHuyen: 'Vũ Thư',
-    TinhThanh: 'Thái Bình',
+    XaPhuong: 'Xã Yên Lâm',
+    QuanHuyen: 'Huyện Hàm Yên',
+    TinhThanh: 'Tỉnh Tuyên Quang',
   },
   {
     MaKhachHang: 'KH-002',
@@ -115,23 +58,36 @@ export const KhachHangs = [
     GioiTinh: 'Nữ',
     NgaySinh: '22/12/2001',
     DiaChiNha: 'Thôn Trung',
-    XaPhuong: 'Song Lãng',
-    QuanHuyen: 'Vũ Thư',
-    TinhThanh: 'Thái Bình'
-  }
+    XaPhuong: 'Xã Sủng Tráng',
+    QuanHuyen: 'Huyện Yên Minh',
+    TinhThanh: 'Tỉnh Hà Giang'
+  },
+  {
+    MaKhachHang: 'KH-003',
+    HoTen: 'Nguyễn Lê A',
+    SoDienThoai: '0123456789',
+    Email: 'nguyenlea@gmail.com',
+    CCCD: '0001234034205',
+    GioiTinh: 'Nữ',
+    NgaySinh: '11/11/2000',
+    DiaChiNha: '55 phố Hoa',
+    XaPhuong: 'Phường Tứ Liên',
+    QuanHuyen: 'Quận Tây Hồ',
+    TinhThanh: 'Thành phố Hà Nội'
+  },
 ]
 
 export const HopDongs = [
   {
     MaHopDong: 'HD-001',
-    MaNhaId: 'CH-002',
-    MaPhong: 'Phong 301',
+    TenNha: 'Ben Hou',
+    TenPhong: 'Phòng 101',
     NgayBatDau: '01/01/2025',
     NgayKetThuc: '31/12/2025',
     TienThue: '3000000',
     TienCoc: '3000000',
     ChuKyThanhToan: '1 tháng',
-    NgayTinhTien: '01',
+    NgayTinhTien: '01/01/2025',
     TrangThai: 'Còn hạn',
     KhachHangs: [
       {
@@ -141,11 +97,11 @@ export const HopDongs = [
         Email: 'nguyenvana@gmail.com',
         CCCD: '0342000012345',
         GioiTinh: 'Nam',
-        NgaySinh: '11/11/1111',
+        NgaySinh: '11/11/2001',
         DiaChiNha: 'Thôn Ba',
-        XaPhuong: 'Song Lãng',
-        QuanHuyen: 'Vũ Thư',
-        TinhThanh: 'Thái Bình'
+        XaPhuong: 'Xã Yên Lâm',
+        QuanHuyen: 'Huyện Hàm Yên',
+        TinhThanh: 'Tỉnh Tuyên Quang',
       },
       {
         MaKhachHang: 'KH-002',
@@ -156,15 +112,57 @@ export const HopDongs = [
         GioiTinh: 'Nữ',
         NgaySinh: '22/12/2001',
         DiaChiNha: 'Thôn Trung',
-        XaPhuong: 'Song Lãng',
-        QuanHuyen: 'Vũ Thư',
-        TinhThanh: 'Thái Bình'
+        XaPhuong: 'Xã Sủng Tráng',
+        QuanHuyen: 'Huyện Yên Minh',
+        TinhThanh: 'Tỉnh Hà Giang'
+      }
+    ],
+    DichVus: [
+      {
+        MaDichVu: 'DV-05',
+        TenDichVu: 'Gửi xe',
+        MaCongTo: '',
+        ChiSoDau: '',
+        NgayTinhPhi: '',
+        LoaiDichVu: 'Tiền gửi xe',
+        DonGia: '50000',
+        DonViTinh: 'Xe'
+      }
+    ]
+  },
+  {
+    MaHopDong: 'HD-002',
+    TenNha: 'Hom Tay',
+    TenPhong: 'Phòng 301',
+    NgayBatDau: '01/01/2024',
+    NgayKetThuc: '31/12/2025',
+    TienThue: '3000000',
+    TienCoc: '3000000',
+    ChuKyThanhToan: '1 tháng',
+    NgayTinhTien: '01/01/2024',
+    TrangThai: 'Hết hạn',
+    KhachHangs: [
+      {
+        MaKhachHang: 'KH-003',
+        HoTen: 'Nguyễn Lê A',
+        SoDienThoai: '0123456789',
+        Email: 'nguyenlea@gmail.com',
+        CCCD: '0001234034205',
+        GioiTinh: 'Nữ',
+        NgaySinh: '11/11/2000',
+        DiaChiNha: '55 phố Hoa',
+        XaPhuong: 'Phường Tứ Liên',
+        QuanHuyen: 'Quận Tây Hồ',
+        TinhThanh: 'Thành phố Hà Nội'
       }
     ],
     DichVus: [
       {
         MaDichVu: 'DV-01',
         TenDichVu: 'Điện',
+        MaCongTo: 'CTD-001',
+        ChiSoDau: '1',
+        NgayTinhPhi: '01/01/2024',
         LoaiDichVu: 'Tiền điện',
         DonGia: '2500',
         DonViTinh: 'đ/Kwh'
@@ -172,6 +170,9 @@ export const HopDongs = [
       {
         MaDichVu: 'DV-02',
         TenDichVu: 'Nước',
+        MaCongTo: 'CTN-001',
+        ChiSoDau: '1',
+        NgayTinhPhi: '01/01/2024',
         LoaiDichVu: 'Tiền nước',
         DonGia: '9000',
         DonViTinh: 'm³'
@@ -179,6 +180,9 @@ export const HopDongs = [
       {
         MaDichVu: 'DV-03',
         TenDichVu: 'Vệ sinh',
+        MaCongTo: '',
+        ChiSoDau: '',
+        NgayTinhPhi: '01/01/2024',
         LoaiDichVu: 'Tiền vệ sinh',
         DonGia: '30000',
         DonViTinh: 'đ/người'
@@ -186,38 +190,13 @@ export const HopDongs = [
       {
         MaDichVu: 'DV-04',
         TenDichVu: 'Internet',
+        MaCongTo: '',
+        ChiSoDau: '',
+        NgayTinhPhi: '01/01/2024',
         LoaiDichVu: 'Tiền vệ sinh',
         DonGia: '100000',
         DonViTinh: 'đ/phòng'
       }
     ]
-  },
-  {
-    MaHopDong: 'HD-002',
-    MaNhaId: 'CH-002',
-    MaPhong: 'Phong 301',
-    NgayBatDau: '01/01/2024',
-    NgayKetThuc: '31/12/2024',
-    TienThue: '3000000',
-    TienCoc: '3000000',
-    ChuKyThanhToan: '1 tháng',
-    NgayTinhTien: '01',
-    TrangThai: 'Hết hạn',
-    KhachHangs: [
-       {
-        MaKhachHang: 'KH-003',
-        HoTen: 'Nguyễn Lê A',
-        SoDienThoai: '0123456789',
-        Email: 'nguyenvana@gmail.com',
-        CCCD: '0342000012345',
-        GioiTinh: 'Nam',
-        NgaySinh: '11/11/1111',
-        DiaChiNha: 'Thôn Ba',
-        XaPhuong: 'Song Lãng',
-        QuanHuyen: 'Vũ Thư',
-        TinhThanh: 'Thái Bình'
-      },
-    ],
-    DichVus: []
   }
 ];

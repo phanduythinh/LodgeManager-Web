@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { styled } from '@mui/material/styles'
+import { StyledTableCell, StyledTableRow } from '~/components/StyledTable'
 import {
-  Table, TableBody, TableCell, tableCellClasses, TableContainer,
+  Table, TableBody, TableContainer,
   TableHead, TableRow, Paper, Button, Box, TextField, Dialog, DialogActions,
   DialogContent, DialogTitle, Grid
 } from '@mui/material'
@@ -12,25 +12,9 @@ import Tooltip from '@mui/material/Tooltip'
 import DeleteIcon from '@mui/icons-material/Delete'
 import BorderColorIcon from '@mui/icons-material/BorderColor'
 import SearchIcon from '@mui/icons-material/Search'
-import { ToaNhaData } from '../../apis/mock-data'
+import { ToaNhaData } from '~/apis/mock-data'
 import { useConfirm } from 'material-ui-confirm'
-
-const StyledTableCell = styled(TableCell)(() => ({
-  [`&.${tableCellClasses.head}`]: {
-    backgroundColor: '#a8d8fb',
-    borderRight: '1px solid #e0e0e0'
-  },
-  [`&.${tableCellClasses.body}`]: {
-    fontSize: 14,
-    borderRight: '1px solid #e0e0e0'
-  }
-}))
-
-const StyledTableRow = styled(TableRow)(({ theme }) => ({
-  '&:nth-of-type(odd)': {
-    backgroundColor: theme.palette.action.hover
-  }
-}))
+import { formatCurrency } from '~/components/formatCurrency'
 
 function ToaNha() {
   const [rows, setRows] = useState(() =>
@@ -108,7 +92,7 @@ function ToaNha() {
 
 
   const validateForm = () => {
-    const requiredFields = ['MaPhong', 'MaNhaId', 'TenPhong', 'Tang', 'GiaThue', 'DatCoc', 'DienTich', 'SoKhachToiDa']
+    const requiredFields = ['MaPhong', 'TenNha', 'TenPhong', 'Tang', 'GiaThue', 'DatCoc', 'DienTich', 'SoKhachToiDa', 'TrangThai']
     const newErrors = {}
 
     requiredFields.forEach(field => {
@@ -277,6 +261,7 @@ function ToaNha() {
                 name="MaPhong"
                 value={formData.MaPhong}
                 onChange={handleChange}
+                disabled={editIndex !== null}
                 error={!!errors.MaPhong}
                 helperText={errors.MaPhong}
               />
@@ -287,14 +272,14 @@ function ToaNha() {
                   disablePortal
                   options={listToaNha}
                   getOptionLabel={(option) => option.title}
-                  value={listToaNha.find(t => t.title === formData.MaNhaId) || null}
-                  onChange={(e, value) => handleAutoChange('MaNhaId', value?.title || '')}
+                  value={listToaNha.find(t => t.title === formData.TenNha) || null}
+                  onChange={(e, value) => handleAutoChange('TenNha', value?.title || '')}
                   renderInput={(params) => (
                     <TextField
                       {...params}
                       label="Tòa nhà (*)"
-                      error={!!errors.MaNhaId}
-                      helperText={errors.MaNhaId}
+                      error={!!errors.TenNha}
+                      helperText={errors.TenNha}
                     />
                   )}
                 />
@@ -388,7 +373,7 @@ function ToaNha() {
                 renderInput={(params) => (
                   <TextField
                     {...params}
-                    label="Trạng thái (*)"
+                    label="Trạng thái thuê (*)"
                     error={!!errors.TrangThai}
                     helperText={errors.TrangThai}
                   />
@@ -429,8 +414,8 @@ function ToaNha() {
                   <Box sx={{ color: '#B9B9C3' }}>Tòa nhà: {row.TenNha}</Box>
                   <Box sx={{ color: '#B9B9C3' }}>{row.Tang}</Box>
                 </StyledTableCell>
-                <StyledTableCell align='right' sx={{ p: '8px' }}>{row.GiaThue}</StyledTableCell>
-                <StyledTableCell align='right' sx={{ p: '8px' }}>{row.DatCoc}</StyledTableCell>
+                <StyledTableCell align='right' sx={{ p: '8px' }}>{formatCurrency(row.GiaThue)}</StyledTableCell>
+                <StyledTableCell align='right' sx={{ p: '8px' }}>{formatCurrency(row.DatCoc)}</StyledTableCell>
                 <StyledTableCell align='right' sx={{ p: '8px' }}>{row.DienTich} m²</StyledTableCell>
                 <StyledTableCell align='right' sx={{ p: '8px' }}>{row.SoKhachToiDa}</StyledTableCell>
                 <StyledTableCell align='center' sx={{ p: '8px' }}>

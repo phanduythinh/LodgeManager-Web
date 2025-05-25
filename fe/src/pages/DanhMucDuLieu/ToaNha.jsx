@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
-import { styled } from '@mui/material/styles'
+import { StyledTableCell, StyledTableRow } from '~/components/StyledTable'
 import {
-  Table, TableBody, TableCell, tableCellClasses, TableContainer,
+  Table, TableBody, TableContainer,
   TableHead, TableRow, Paper, Button, Box, TextField, Dialog, DialogActions,
   DialogContent, DialogTitle, Grid, Switch, FormControlLabel
 } from '@mui/material'
@@ -14,24 +14,7 @@ import BorderColorIcon from '@mui/icons-material/BorderColor'
 import SearchIcon from '@mui/icons-material/Search'
 import { useConfirm } from 'material-ui-confirm'
 import { getProvinces, getDistrictsByProvinceCode, getWardsByDistrictCode } from 'sub-vn'
-import { ToaNhaData } from '../../apis/mock-data'
-
-const StyledTableCell = styled(TableCell)(() => ({
-  [`&.${tableCellClasses.head}`]: {
-    backgroundColor: '#a8d8fb',
-    borderRight: '1px solid #e0e0e0'
-  },
-  [`&.${tableCellClasses.body}`]: {
-    fontSize: 14,
-    borderRight: '1px solid #e0e0e0'
-  }
-}))
-
-const StyledTableRow = styled(TableRow)(({ theme }) => ({
-  '&:nth-of-type(odd)': {
-    backgroundColor: theme.palette.action.hover
-  }
-}))
+import { ToaNhaData } from '~/apis/mock-data'
 
 function ToaNha() {
   const [rows, setRows] = useState(ToaNhaData || [])
@@ -140,8 +123,11 @@ function ToaNha() {
     })
 
     // Kiểm tra trùng mã nhà khi thêm mới
-    if (!isEdit && formData.MaNha) {
-      if (ToaNhaData.some((toaNha) => toaNha.MaNha === formData.MaNha)) {
+    if (formData.MaNha) {
+      const duplicate = rows.find(row => row.MaNha === formData.MaNha)
+      if (!editId && duplicate) {
+        newErrors.MaNha = 'Mã nhà đã tồn tại'
+      } else if (editId && duplicate && duplicate.MaNha !== editId) {
         newErrors.MaNha = 'Mã nhà đã tồn tại'
       }
     }
@@ -287,6 +273,9 @@ function ToaNha() {
                   value={formData.MaNha || ''}
                   name="MaNha"
                   onChange={handleChange}
+                  disabled={editId !== null} // Không cho sửa khi đang ở chế độ sửa
+                  error={!!errors.MaNha}
+                  helperText={errors.MaNha}
                 />
               </Grid>
             </Grid>

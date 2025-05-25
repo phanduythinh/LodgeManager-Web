@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { styled } from '@mui/material/styles'
+import { StyledTableCell, StyledTableRow } from '~/components/StyledTable'
 import {
-  Table, TableBody, TableCell, tableCellClasses, TableContainer,
+  Table, TableBody, TableContainer,
   TableHead, TableRow, Paper, Button, Box, TextField, Dialog, DialogActions,
   DialogContent, DialogTitle, Grid, Switch, FormControlLabel
 } from '@mui/material'
@@ -12,25 +12,9 @@ import Tooltip from '@mui/material/Tooltip'
 import DeleteIcon from '@mui/icons-material/Delete'
 import BorderColorIcon from '@mui/icons-material/BorderColor'
 import SearchIcon from '@mui/icons-material/Search'
-import { ToaNhaData } from '../../apis/mock-data'
+import { ToaNhaData } from '~/apis/mock-data'
 import { useConfirm } from 'material-ui-confirm'
-
-const StyledTableCell = styled(TableCell)(() => ({
-  [`&.${tableCellClasses.head}`]: {
-    backgroundColor: '#a8d8fb',
-    borderRight: '1px solid #e0e0e0'
-  },
-  [`&.${tableCellClasses.body}`]: {
-    fontSize: 14,
-    borderRight: '1px solid #e0e0e0'
-  }
-}))
-
-const StyledTableRow = styled(TableRow)(({ theme }) => ({
-  '&:nth-of-type(odd)': {
-    backgroundColor: theme.palette.action.hover
-  }
-}))
+import { formatCurrency } from '~/components/formatCurrency'
 
 function PhiDichVu() {
   const [rows, setRows] = useState(() =>
@@ -267,6 +251,7 @@ function PhiDichVu() {
                 name="MaDichVu"
                 value={formData.MaDichVu}
                 onChange={handleChange}
+                disabled={editIndex !== null}
                 error={!!errors.MaDichVu}
                 helperText={errors.MaDichVu}
               />
@@ -386,7 +371,7 @@ function PhiDichVu() {
                   <Box sx={{ display: 'none' }}>{row.TenNha}</Box>
                 </StyledTableCell>
                 <StyledTableCell sx={{ p: '8px' }}>{row.LoaiDichVu}</StyledTableCell>
-                <StyledTableCell align='right' sx={{ p: '8px' }}>{row.DonGia}/{row.DonViTinh}</StyledTableCell>
+                <StyledTableCell align='right' sx={{ p: '8px' }}>{formatCurrency(row.DonGia)}/{row.DonViTinh}</StyledTableCell>
                 <StyledTableCell sx={{ p: '8px' }}>
                   <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
                     <Tooltip title="Sửa">
