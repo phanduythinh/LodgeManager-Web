@@ -4,6 +4,7 @@ import Phong from './pages/DanhMucDuLieu/Phong'
 import ToaNha from './pages/DanhMucDuLieu/ToaNha'
 import HopDong from '~/pages/KhachHang/HopDong'
 import KhachHang from './pages/KhachHang/KhachHang'
+import Login from './pages/Login'
 
 import PropTypes from 'prop-types'
 import Box from '@mui/material/Box'
@@ -20,9 +21,15 @@ import MeetingRoomIcon from '@mui/icons-material/MeetingRoom'
 import WaterDropIcon from '@mui/icons-material/WaterDrop'
 import PermIdentityIcon from '@mui/icons-material/PermIdentity'
 import GroupIcon from '@mui/icons-material/Group'
+import LoginIcon from '@mui/icons-material/Login'
 import { ToaNhaData } from './apis/mock-data'
 
 const NAVIGATION = [
+  {
+    segment: 'Login',
+    title: 'Đăng nhập',
+    icon: <LoginIcon />
+  },
   {
     kind: 'header',
     title: 'QUẢN LÝ & VẬN HÀNH'
@@ -95,6 +102,9 @@ function DemoPageContent({ pathname }) {
   let content
 
   switch (pathname) {
+    case '/Login':
+      content = <Login />
+      break
     case '/DanhMucDuLieu/ToaNha':
       content = <ToaNha ToaNhaData={ToaNhaData} />
       break
