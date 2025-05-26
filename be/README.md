@@ -39,12 +39,12 @@ php artisan key:generate
 5. Cấu hình database trong file .env:
 
 ```bash
-DB_CONNECTION=mysql
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_DATABASE=lodge_manager
-DB_USERNAME=root
-DB_PASSWORD=
+DB_CONNECTION=sqlite
+# DB_HOST=127.0.0.1
+# DB_PORT=3306
+# DB_DATABASE=lodge_manager
+# DB_USERNAME=root
+# DB_PASSWORD=
 ```
 
 6. Chạy migrations:
@@ -66,13 +66,6 @@ php artisan serve
 ```
 
 ## API Endpoints
-
-### Authentication
-
--   POST /api/register - Đăng ký
--   POST /api/login - Đăng nhập
--   GET /api/user - Lấy thông tin user
--   POST /api/logout - Đăng xuất
 
 ### Resources
 
