@@ -3,12 +3,11 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\RoomRequest;
-use App\Http\Resources\RoomResource;
-use App\Models\Room;
-use Illuminate\Http\JsonResponse;
+use App\Http\Requests\PhongRequest;
+use App\Models\Phong;
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 /**
  * @OA\Tag(
@@ -55,21 +54,32 @@ class RoomController extends Controller
      *     )
      * )
      */
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(Request $request)
     {
-        $query = Room::query();
+        try {
+            $query = Phong::query();
 
-        if ($request->has('building_id')) {
-            $query->where('building_id', $request->get('building_id'));
+            if ($request->has('toa_nha_id')) {
+                $query->where('toa_nha_id', $request->toa_nha_id);
+            }
+
+            if ($request->has('trang_thai')) {
+                $query->where('trang_thai', $request->trang_thai);
+            }
+
+            $phongs = $query->with(['toaNha', 'hopDong'])->paginate(10);
+
+            return response()->json([
+                'status' => 'success',
+                'data' => $phongs
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Lỗi khi lấy danh sách phòng: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Có lỗi xảy ra khi lấy danh sách phòng'
+            ], 500);
         }
-
-        if ($request->has('status')) {
-            $query->where('status', $request->get('status'));
-        }
-
-        $rooms = $query->with(['building', 'contracts'])->paginate(10);
-
-        return RoomResource::collection($rooms);
     }
 
     /**
@@ -101,11 +111,28 @@ class RoomController extends Controller
      *     )
      * )
      */
-    public function store(RoomRequest $request): RoomResource
+    public function store(PhongRequest $request)
     {
-        $room = Room::create($request->validated());
+        try {
+            DB::beginTransaction();
 
-        return new RoomResource($room);
+            $phong = Phong::create($request->validated());
+
+            DB::commit();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Tạo phòng thành công',
+                'data' => $phong
+            ], 201);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Lỗi khi tạo phòng: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Có lỗi xảy ra khi tạo phòng'
+            ], 500);
+        }
     }
 
     /**
@@ -131,10 +158,21 @@ class RoomController extends Controller
      *     )
      * )
      */
-    public function show(Room $room): RoomResource
+    public function show($id)
     {
-        $room->load(['building', 'contracts']);
-        return new RoomResource($room);
+        try {
+            $phong = Phong::with(['toaNha', 'hopDong'])->findOrFail($id);
+            return response()->json([
+                'status' => 'success',
+                'data' => $phong
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Lỗi khi lấy thông tin phòng: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Không tìm thấy phòng'
+            ], 404);
+        }
     }
 
     /**
@@ -177,11 +215,38 @@ class RoomController extends Controller
      *     )
      * )
      */
-    public function update(RoomRequest $request, Room $room): RoomResource
+    public function update(PhongRequest $request, $id)
     {
-        $room->update($request->validated());
+        try {
+            DB::beginTransaction();
 
-        return new RoomResource($room);
+            $phong = Phong::findOrFail($id);
+
+            // Kiểm tra nếu phòng đang có hợp đồng
+            if ($phong->hopDong && $phong->hopDong->trang_thai === 'dang_thue') {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Không thể cập nhật phòng đang có hợp đồng thuê'
+                ], 400);
+            }
+
+            $phong->update($request->validated());
+
+            DB::commit();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Cập nhật phòng thành công',
+                'data' => $phong
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Lỗi khi cập nhật phòng: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Có lỗi xảy ra khi cập nhật phòng'
+            ], 500);
+        }
     }
 
     /**
@@ -215,10 +280,72 @@ class RoomController extends Controller
      *     )
      * )
      */
-    public function destroy(Room $room): JsonResponse
+    public function destroy($id)
     {
-        $room->delete();
+        try {
+            DB::beginTransaction();
 
-        return response()->json(null, 204);
+            $phong = Phong::findOrFail($id);
+
+            // Kiểm tra nếu phòng đang có hợp đồng
+            if ($phong->hopDong && $phong->hopDong->trang_thai === 'dang_thue') {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Không thể xóa phòng đang có hợp đồng thuê'
+                ], 400);
+            }
+
+            $phong->delete();
+
+            DB::commit();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Xóa phòng thành công'
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Lỗi khi xóa phòng: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Có lỗi xảy ra khi xóa phòng'
+            ], 500);
+        }
+    }
+
+    public function search(Request $request)
+    {
+        try {
+            $query = Phong::query();
+
+            if ($request->has('keyword')) {
+                $keyword = $request->keyword;
+                $query->where(function ($q) use ($keyword) {
+                    $q->where('ten', 'like', "%{$keyword}%")
+                        ->orWhere('loai_phong', 'like', "%{$keyword}%");
+                });
+            }
+
+            if ($request->has('toa_nha_id')) {
+                $query->where('toa_nha_id', $request->toa_nha_id);
+            }
+
+            if ($request->has('trang_thai')) {
+                $query->where('trang_thai', $request->trang_thai);
+            }
+
+            $phongs = $query->with(['toaNha', 'hopDong'])->paginate(10);
+
+            return response()->json([
+                'status' => 'success',
+                'data' => $phongs
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Lỗi khi tìm kiếm phòng: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Có lỗi xảy ra khi tìm kiếm phòng'
+            ], 500);
+        }
     }
 }

@@ -3,12 +3,11 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\CustomerRequest;
-use App\Http\Resources\CustomerResource;
-use App\Models\Customer;
-use Illuminate\Http\JsonResponse;
+use App\Http\Requests\KhachHangRequest;
+use App\Models\KhachHang;
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 /**
  * @OA\Tag(
@@ -55,26 +54,37 @@ class CustomerController extends Controller
      *     )
      * )
      */
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(Request $request)
     {
-        $query = Customer::query();
+        try {
+            $query = KhachHang::query();
 
-        if ($request->has('search')) {
-            $search = $request->get('search');
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%")
-                    ->orWhere('phone', 'like', "%{$search}%");
-            });
+            if ($request->has('keyword')) {
+                $keyword = $request->keyword;
+                $query->where(function ($q) use ($keyword) {
+                    $q->where('ho_ten', 'like', "%{$keyword}%")
+                        ->orWhere('email', 'like', "%{$keyword}%")
+                        ->orWhere('so_dien_thoai', 'like', "%{$keyword}%");
+                });
+            }
+
+            if ($request->has('trang_thai')) {
+                $query->where('trang_thai', $request->trang_thai);
+            }
+
+            $khachHangs = $query->with(['hopDong'])->paginate(10);
+
+            return response()->json([
+                'status' => 'success',
+                'data' => $khachHangs
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Lỗi khi lấy danh sách khách hàng: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Có lỗi xảy ra khi lấy danh sách khách hàng'
+            ], 500);
         }
-
-        if ($request->has('status')) {
-            $query->where('status', $request->get('status'));
-        }
-
-        $customers = $query->with(['contracts'])->paginate(10);
-
-        return CustomerResource::collection($customers);
     }
 
     /**
@@ -106,11 +116,28 @@ class CustomerController extends Controller
      *     )
      * )
      */
-    public function store(CustomerRequest $request): CustomerResource
+    public function store(KhachHangRequest $request)
     {
-        $customer = Customer::create($request->validated());
+        try {
+            DB::beginTransaction();
 
-        return new CustomerResource($customer);
+            $khachHang = KhachHang::create($request->validated());
+
+            DB::commit();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Tạo khách hàng thành công',
+                'data' => $khachHang
+            ], 201);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Lỗi khi tạo khách hàng: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Có lỗi xảy ra khi tạo khách hàng'
+            ], 500);
+        }
     }
 
     /**
@@ -136,10 +163,21 @@ class CustomerController extends Controller
      *     )
      * )
      */
-    public function show(Customer $customer): CustomerResource
+    public function show($id)
     {
-        $customer->load(['contracts']);
-        return new CustomerResource($customer);
+        try {
+            $khachHang = KhachHang::with(['hopDong'])->findOrFail($id);
+            return response()->json([
+                'status' => 'success',
+                'data' => $khachHang
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Lỗi khi lấy thông tin khách hàng: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Không tìm thấy khách hàng'
+            ], 404);
+        }
     }
 
     /**
@@ -182,11 +220,38 @@ class CustomerController extends Controller
      *     )
      * )
      */
-    public function update(CustomerRequest $request, Customer $customer): CustomerResource
+    public function update(KhachHangRequest $request, $id)
     {
-        $customer->update($request->validated());
+        try {
+            DB::beginTransaction();
 
-        return new CustomerResource($customer);
+            $khachHang = KhachHang::findOrFail($id);
+
+            // Kiểm tra nếu khách hàng đang có hợp đồng
+            if ($khachHang->hopDong && $khachHang->hopDong->trang_thai === 'dang_thue') {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Không thể cập nhật khách hàng đang có hợp đồng thuê'
+                ], 400);
+            }
+
+            $khachHang->update($request->validated());
+
+            DB::commit();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Cập nhật khách hàng thành công',
+                'data' => $khachHang
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Lỗi khi cập nhật khách hàng: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Có lỗi xảy ra khi cập nhật khách hàng'
+            ], 500);
+        }
     }
 
     /**
@@ -220,10 +285,70 @@ class CustomerController extends Controller
      *     )
      * )
      */
-    public function destroy(Customer $customer): JsonResponse
+    public function destroy($id)
     {
-        $customer->delete();
+        try {
+            DB::beginTransaction();
 
-        return response()->json(null, 204);
+            $khachHang = KhachHang::findOrFail($id);
+
+            // Kiểm tra nếu khách hàng đang có hợp đồng
+            if ($khachHang->hopDong && $khachHang->hopDong->trang_thai === 'dang_thue') {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Không thể xóa khách hàng đang có hợp đồng thuê'
+                ], 400);
+            }
+
+            $khachHang->delete();
+
+            DB::commit();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Xóa khách hàng thành công'
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Lỗi khi xóa khách hàng: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Có lỗi xảy ra khi xóa khách hàng'
+            ], 500);
+        }
+    }
+
+    public function search(Request $request)
+    {
+        try {
+            $query = KhachHang::query();
+
+            if ($request->has('keyword')) {
+                $keyword = $request->keyword;
+                $query->where(function ($q) use ($keyword) {
+                    $q->where('ho_ten', 'like', "%{$keyword}%")
+                        ->orWhere('email', 'like', "%{$keyword}%")
+                        ->orWhere('so_dien_thoai', 'like', "%{$keyword}%")
+                        ->orWhere('cmnd_cccd', 'like', "%{$keyword}%");
+                });
+            }
+
+            if ($request->has('trang_thai')) {
+                $query->where('trang_thai', $request->trang_thai);
+            }
+
+            $khachHangs = $query->with(['hopDong'])->paginate(10);
+
+            return response()->json([
+                'status' => 'success',
+                'data' => $khachHangs
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Lỗi khi tìm kiếm khách hàng: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Có lỗi xảy ra khi tìm kiếm khách hàng'
+            ], 500);
+        }
     }
 }

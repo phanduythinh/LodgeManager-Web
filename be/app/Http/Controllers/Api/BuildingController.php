@@ -3,13 +3,11 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\BuildingRequest;
-use App\Http\Resources\BuildingResource;
-use App\Models\Building;
+use App\Http\Requests\ToaNhaRequest;
+use App\Models\ToaNha;
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
-use Illuminate\Http\Response;
-use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 /**
  * @OA\Tag(
@@ -56,31 +54,21 @@ class BuildingController extends Controller
      *     )
      * )
      */
-    public function index(): JsonResponse
+    public function index()
     {
-        // Return dummy data for testing
-        return response()->json([
-            'data' => [
-                [
-                    'id' => 'TN-001',
-                    'TenNha' => 'Tòa nhà Test 1',
-                    'DiaChiNha' => '123 Test Street',
-                    'TinhThanh' => 'Hà Nội',
-                    'QuanHuyen' => 'Cầu Giấy',
-                    'XaPhuong' => 'Dịch Vọng',
-                    'TrangThai' => 'Hoạt động'
-                ],
-                [
-                    'id' => 'TN-002',
-                    'TenNha' => 'Tòa nhà Test 2',
-                    'DiaChiNha' => '456 Test Avenue',
-                    'TinhThanh' => 'Hà Nội',
-                    'QuanHuyen' => 'Ba Đình',
-                    'XaPhuong' => 'Kim Mã',
-                    'TrangThai' => 'Hoạt động'
-                ]
-            ]
-        ]);
+        try {
+            $toaNhas = ToaNha::with('chuToaNha')->paginate(10);
+            return response()->json([
+                'status' => 'success',
+                'data' => $toaNhas
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Lỗi khi lấy danh sách tòa nhà: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Có lỗi xảy ra khi lấy danh sách tòa nhà'
+            ], 500);
+        }
     }
 
     /**
@@ -112,12 +100,28 @@ class BuildingController extends Controller
      *     )
      * )
      */
-    public function store(Request $request): JsonResponse
+    public function store(ToaNhaRequest $request)
     {
-        return response()->json([
-            'message' => 'Building created successfully',
-            'data' => $request->all()
-        ], 201);
+        try {
+            DB::beginTransaction();
+
+            $toaNha = ToaNha::create($request->validated());
+
+            DB::commit();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Tạo tòa nhà thành công',
+                'data' => $toaNha
+            ], 201);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Lỗi khi tạo tòa nhà: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Có lỗi xảy ra khi tạo tòa nhà'
+            ], 500);
+        }
     }
 
     /**
@@ -143,19 +147,21 @@ class BuildingController extends Controller
      *     )
      * )
      */
-    public function show(string $id): JsonResponse
+    public function show($id)
     {
-        return response()->json([
-            'data' => [
-                'id' => $id,
-                'TenNha' => 'Tòa nhà Test ' . $id,
-                'DiaChiNha' => '123 Test Street',
-                'TinhThanh' => 'Hà Nội',
-                'QuanHuyen' => 'Cầu Giấy',
-                'XaPhuong' => 'Dịch Vọng',
-                'TrangThai' => 'Hoạt động'
-            ]
-        ]);
+        try {
+            $toaNha = ToaNha::with('chuToaNha', 'phongs')->findOrFail($id);
+            return response()->json([
+                'status' => 'success',
+                'data' => $toaNha
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Lỗi khi lấy thông tin tòa nhà: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Không tìm thấy tòa nhà'
+            ], 404);
+        }
     }
 
     /**
@@ -198,12 +204,29 @@ class BuildingController extends Controller
      *     )
      * )
      */
-    public function update(Request $request, string $id): JsonResponse
+    public function update(ToaNhaRequest $request, $id)
     {
-        return response()->json([
-            'message' => 'Building updated successfully',
-            'data' => array_merge(['id' => $id], $request->all())
-        ]);
+        try {
+            DB::beginTransaction();
+
+            $toaNha = ToaNha::findOrFail($id);
+            $toaNha->update($request->validated());
+
+            DB::commit();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Cập nhật tòa nhà thành công',
+                'data' => $toaNha
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Lỗi khi cập nhật tòa nhà: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Có lỗi xảy ra khi cập nhật tòa nhà'
+            ], 500);
+        }
     }
 
     /**
@@ -237,11 +260,68 @@ class BuildingController extends Controller
      *     )
      * )
      */
-    public function destroy(string $id): JsonResponse
+    public function destroy($id)
     {
-        return response()->json([
-            'message' => 'Building deleted successfully',
-            'id' => $id
-        ]);
+        try {
+            DB::beginTransaction();
+
+            $toaNha = ToaNha::findOrFail($id);
+
+            // Kiểm tra xem tòa nhà có phòng nào không
+            if ($toaNha->phongs()->exists()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Không thể xóa tòa nhà vì còn phòng'
+                ], 400);
+            }
+
+            $toaNha->delete();
+
+            DB::commit();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Xóa tòa nhà thành công'
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Lỗi khi xóa tòa nhà: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Có lỗi xảy ra khi xóa tòa nhà'
+            ], 500);
+        }
+    }
+
+    public function search(Request $request)
+    {
+        try {
+            $query = ToaNha::query();
+
+            if ($request->has('keyword')) {
+                $keyword = $request->keyword;
+                $query->where(function ($q) use ($keyword) {
+                    $q->where('ten', 'like', "%{$keyword}%")
+                        ->orWhere('dia_chi', 'like', "%{$keyword}%");
+                });
+            }
+
+            if ($request->has('trang_thai')) {
+                $query->where('trang_thai', $request->trang_thai);
+            }
+
+            $toaNhas = $query->with('chuToaNha')->paginate(10);
+
+            return response()->json([
+                'status' => 'success',
+                'data' => $toaNhas
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Lỗi khi tìm kiếm tòa nhà: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Có lỗi xảy ra khi tìm kiếm tòa nhà'
+            ], 500);
+        }
     }
 }

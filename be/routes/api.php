@@ -16,6 +16,8 @@ use App\Http\Controllers\Api\ToaNhaController;
 use App\Http\Controllers\Api\PhongController;
 use App\Http\Controllers\Api\KhachHangController;
 use App\Http\Controllers\Api\HopDongController;
+use App\Http\Controllers\Api\PhiDichVuController;
+use App\Http\Controllers\Api\HoaDonController;
 
 /*
 |--------------------------------------------------------------------------
@@ -50,6 +52,34 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('services', ServiceController::class);
     Route::apiResource('legal-documents', LegalDocumentController::class);
     Route::apiResource('reports', ReportController::class);
+
+    // ToaNha routes
+    Route::apiResource('toa-nha', ToaNhaController::class);
+    Route::get('toa-nha/{id}/phong', [ToaNhaController::class, 'getPhongs']);
+    Route::get('toa-nha/search', [ToaNhaController::class, 'search']);
+
+    // Phong routes
+    Route::apiResource('phong', PhongController::class);
+    Route::get('phong/{id}/hop-dong', [PhongController::class, 'getHopDong']);
+    Route::get('phong/{id}/hoa-don', [PhongController::class, 'getHoaDon']);
+    Route::get('phong/search', [PhongController::class, 'search']);
+
+    // KhachHang routes
+    Route::apiResource('khach-hang', KhachHangController::class);
+    Route::get('khach-hang/search', [KhachHangController::class, 'search']);
+    Route::get('khach-hang/{id}/hop-dong', [KhachHangController::class, 'getHopDongs']);
+
+    // HopDong routes
+    Route::apiResource('hop-dong', HopDongController::class);
+    Route::get('hop-dong/{id}/hoa-don', [HopDongController::class, 'getHoaDons']);
+    Route::get('hop-dong/search', [HopDongController::class, 'search']);
+
+    // PhiDichVu routes
+    Route::apiResource('phi-dich-vu', PhiDichVuController::class);
+
+    // HoaDon routes
+    Route::apiResource('hoa-don', HoaDonController::class);
+    Route::post('hoa-don/{id}/thanh-toan', [HoaDonController::class, 'thanhToan']);
 });
 
 // Test route
