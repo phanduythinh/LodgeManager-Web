@@ -3,63 +3,136 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Http\Resources\PhongResource;
+use App\Http\Requests\PhongRequest;
 use App\Models\Phong;
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
-use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class PhongController extends Controller
 {
-    public function index(): AnonymousResourceCollection
+    public function index()
     {
-        $phongs = Phong::with(['toaNha'])->get();
-        return PhongResource::collection($phongs);
+        try {
+            $phongs = Phong::with(['toaNha', 'hopDong'])->paginate(10);
+            return response()->json([
+                'status' => 'success',
+                'data' => $phongs
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Lỗi khi lấy danh sách phòng: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Có lỗi xảy ra khi lấy danh sách phòng'
+            ], 500);
+        }
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(PhongRequest $request)
     {
-        $validated = $request->validate([
-            'toa_nha_id' => 'required|exists:toa_nhas,id',
-            'ma_phong' => 'required|unique:phongs',
-            'ten_phong' => 'required',
-            'tang' => 'required',
-            'gia_thue' => 'required|numeric',
-            'dat_coc' => 'required|numeric',
-            'dien_tich' => 'required|numeric',
-            'so_khach_toi_da' => 'required|integer',
-            'trang_thai' => 'required'
-        ]);
+        try {
+            DB::beginTransaction();
 
-        $phong = Phong::create($validated);
-        return (new PhongResource($phong))->response()->setStatusCode(201);
+            $phong = Phong::create($request->validated());
+
+            DB::commit();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Tạo phòng thành công',
+                'data' => $phong
+            ], 201);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Lỗi khi tạo phòng: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Có lỗi xảy ra khi tạo phòng'
+            ], 500);
+        }
     }
 
-    public function show(Phong $phong): PhongResource
+    public function show($id)
     {
-        $phong->load(['toaNha']);
-        return new PhongResource($phong);
+        try {
+            $phong = Phong::with(['toaNha', 'hopDong'])->findOrFail($id);
+            return response()->json([
+                'status' => 'success',
+                'data' => $phong
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Lỗi khi lấy thông tin phòng: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Không tìm thấy phòng'
+            ], 404);
+        }
     }
 
-    public function update(Request $request, Phong $phong): PhongResource
+    public function update(PhongRequest $request, $id)
     {
-        $validated = $request->validate([
-            'ten_phong' => 'required',
-            'tang' => 'required',
-            'gia_thue' => 'required|numeric',
-            'dat_coc' => 'required|numeric',
-            'dien_tich' => 'required|numeric',
-            'so_khach_toi_da' => 'required|integer',
-            'trang_thai' => 'required'
-        ]);
+        try {
+            DB::beginTransaction();
 
-        $phong->update($validated);
-        return new PhongResource($phong);
+            $phong = Phong::findOrFail($id);
+
+            // Kiểm tra nếu phòng đang có hợp đồng
+            if ($phong->hopDong && $phong->hopDong->trang_thai === 'dang_thue') {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Không thể cập nhật phòng đang có hợp đồng thuê'
+                ], 400);
+            }
+
+            $phong->update($request->validated());
+
+            DB::commit();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Cập nhật phòng thành công',
+                'data' => $phong
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Lỗi khi cập nhật phòng: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Có lỗi xảy ra khi cập nhật phòng'
+            ], 500);
+        }
     }
 
-    public function destroy(Phong $phong): JsonResponse
+    public function destroy($id)
     {
-        $phong->delete();
-        return response()->json(null, 204);
+        try {
+            DB::beginTransaction();
+
+            $phong = Phong::findOrFail($id);
+
+            // Kiểm tra nếu phòng đang có hợp đồng
+            if ($phong->hopDong && $phong->hopDong->trang_thai === 'dang_thue') {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Không thể xóa phòng đang có hợp đồng thuê'
+                ], 400);
+            }
+
+            $phong->delete();
+
+            DB::commit();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Xóa phòng thành công'
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Lỗi khi xóa phòng: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Có lỗi xảy ra khi xóa phòng'
+            ], 500);
+        }
     }
 }

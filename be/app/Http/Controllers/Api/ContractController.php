@@ -3,12 +3,11 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\ContractRequest;
-use App\Http\Resources\ContractResource;
-use App\Models\Contract;
-use Illuminate\Http\JsonResponse;
+use App\Http\Requests\HopDongRequest;
+use App\Models\HopDong;
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 /**
  * @OA\Tag(
@@ -62,25 +61,36 @@ class ContractController extends Controller
      *     )
      * )
      */
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(Request $request)
     {
-        $query = Contract::query();
+        try {
+            $query = HopDong::query();
 
-        if ($request->has('room_id')) {
-            $query->where('room_id', $request->get('room_id'));
+            if ($request->has('phong_id')) {
+                $query->where('phong_id', $request->phong_id);
+            }
+
+            if ($request->has('khach_hang_id')) {
+                $query->where('khach_hang_id', $request->khach_hang_id);
+            }
+
+            if ($request->has('trang_thai')) {
+                $query->where('trang_thai', $request->trang_thai);
+            }
+
+            $hopDongs = $query->with(['phong', 'khachHang', 'dichVu'])->paginate(10);
+
+            return response()->json([
+                'status' => 'success',
+                'data' => $hopDongs
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Lỗi khi lấy danh sách hợp đồng: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Có lỗi xảy ra khi lấy danh sách hợp đồng'
+            ], 500);
         }
-
-        if ($request->has('customer_id')) {
-            $query->where('customer_id', $request->get('customer_id'));
-        }
-
-        if ($request->has('status')) {
-            $query->where('status', $request->get('status'));
-        }
-
-        $contracts = $query->with(['room', 'customer', 'services'])->paginate(10);
-
-        return ContractResource::collection($contracts);
     }
 
     /**
@@ -112,15 +122,32 @@ class ContractController extends Controller
      *     )
      * )
      */
-    public function store(ContractRequest $request): ContractResource
+    public function store(HopDongRequest $request)
     {
-        $contract = Contract::create($request->validated());
+        try {
+            DB::beginTransaction();
 
-        if ($request->has('service_ids')) {
-            $contract->services()->attach($request->get('service_ids'));
+            $hopDong = HopDong::create($request->validated());
+
+            if ($request->has('dich_vu_ids')) {
+                $hopDong->dichVu()->attach($request->dich_vu_ids);
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Tạo hợp đồng thành công',
+                'data' => $hopDong
+            ], 201);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Lỗi khi tạo hợp đồng: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Có lỗi xảy ra khi tạo hợp đồng'
+            ], 500);
         }
-
-        return new ContractResource($contract);
     }
 
     /**
@@ -146,10 +173,21 @@ class ContractController extends Controller
      *     )
      * )
      */
-    public function show(Contract $contract): ContractResource
+    public function show($id)
     {
-        $contract->load(['room', 'customer', 'services']);
-        return new ContractResource($contract);
+        try {
+            $hopDong = HopDong::with(['phong', 'khachHang', 'dichVu'])->findOrFail($id);
+            return response()->json([
+                'status' => 'success',
+                'data' => $hopDong
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Lỗi khi lấy thông tin hợp đồng: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Không tìm thấy hợp đồng'
+            ], 404);
+        }
     }
 
     /**
@@ -192,15 +230,42 @@ class ContractController extends Controller
      *     )
      * )
      */
-    public function update(ContractRequest $request, Contract $contract): ContractResource
+    public function update(HopDongRequest $request, $id)
     {
-        $contract->update($request->validated());
+        try {
+            DB::beginTransaction();
 
-        if ($request->has('service_ids')) {
-            $contract->services()->sync($request->get('service_ids'));
+            $hopDong = HopDong::findOrFail($id);
+
+            // Kiểm tra nếu hợp đồng đã kết thúc
+            if ($hopDong->trang_thai === 'da_ket_thuc') {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Không thể cập nhật hợp đồng đã kết thúc'
+                ], 400);
+            }
+
+            $hopDong->update($request->validated());
+
+            if ($request->has('dich_vu_ids')) {
+                $hopDong->dichVu()->sync($request->dich_vu_ids);
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Cập nhật hợp đồng thành công',
+                'data' => $hopDong
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Lỗi khi cập nhật hợp đồng: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Có lỗi xảy ra khi cập nhật hợp đồng'
+            ], 500);
         }
-
-        return new ContractResource($contract);
     }
 
     /**
@@ -234,10 +299,74 @@ class ContractController extends Controller
      *     )
      * )
      */
-    public function destroy(Contract $contract): JsonResponse
+    public function destroy($id)
     {
-        $contract->delete();
+        try {
+            DB::beginTransaction();
 
-        return response()->json(null, 204);
+            $hopDong = HopDong::findOrFail($id);
+
+            // Kiểm tra nếu hợp đồng đang có phòng đang thuê
+            if ($hopDong->trang_thai === 'dang_thue') {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Không thể xóa hợp đồng đang có phòng đang thuê'
+                ], 400);
+            }
+
+            $hopDong->delete();
+
+            DB::commit();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Xóa hợp đồng thành công'
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Lỗi khi xóa hợp đồng: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Có lỗi xảy ra khi xóa hợp đồng'
+            ], 500);
+        }
+    }
+
+    public function search(Request $request)
+    {
+        try {
+            $query = HopDong::query();
+
+            if ($request->has('keyword')) {
+                $keyword = $request->keyword;
+                $query->where(function ($q) use ($keyword) {
+                    $q->where('ma_hop_dong', 'like', "%{$keyword}%")
+                        ->orWhereHas('khachHang', function ($q) use ($keyword) {
+                            $q->where('ho_ten', 'like', "%{$keyword}%")
+                                ->orWhere('so_dien_thoai', 'like', "%{$keyword}%");
+                        })
+                        ->orWhereHas('phong', function ($q) use ($keyword) {
+                            $q->where('ten', 'like', "%{$keyword}%");
+                        });
+                });
+            }
+
+            if ($request->has('trang_thai')) {
+                $query->where('trang_thai', $request->trang_thai);
+            }
+
+            $hopDongs = $query->with(['phong', 'khachHang', 'dichVu'])->paginate(10);
+
+            return response()->json([
+                'status' => 'success',
+                'data' => $hopDongs
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Lỗi khi tìm kiếm hợp đồng: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Có lỗi xảy ra khi tìm kiếm hợp đồng'
+            ], 500);
+        }
     }
 }
