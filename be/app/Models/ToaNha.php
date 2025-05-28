@@ -18,6 +18,8 @@ class ToaNha extends Model
         'tinh_thanh',
         'trang_thai'
     ];
+    
+    // Relationships
 
     public function phongs(): HasMany
     {

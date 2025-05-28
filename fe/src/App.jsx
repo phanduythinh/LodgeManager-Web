@@ -4,7 +4,9 @@ import Phong from './pages/DanhMucDuLieu/Phong'
 import ToaNha from './pages/DanhMucDuLieu/ToaNha'
 import HopDong from '~/pages/KhachHang/HopDong'
 import KhachHang from './pages/KhachHang/KhachHang'
-import Login from './pages/Login'
+import ApiTest from './components/ApiTest'
+import ApiTester from './components/ApiTester'
+// import Login from './pages/Login'
 
 import PropTypes from 'prop-types'
 import Box from '@mui/material/Box'
@@ -22,13 +24,23 @@ import WaterDropIcon from '@mui/icons-material/WaterDrop'
 import PermIdentityIcon from '@mui/icons-material/PermIdentity'
 import GroupIcon from '@mui/icons-material/Group'
 import LoginIcon from '@mui/icons-material/Login'
-import { ToaNhaData } from './apis/mock-data'
+import ApiIcon from '@mui/icons-material/Api'
 
 const NAVIGATION = [
   {
     segment: 'Login',
     title: 'Đăng nhập',
     icon: <LoginIcon />
+  },
+  {
+    segment: 'ApiTest',
+    title: 'Kiểm tra API',
+    icon: <ApiIcon />
+  },
+  {
+    segment: 'ApiTester',
+    title: 'Kiểm tra API Tòa Nhà',
+    icon: <ApiIcon />
   },
   {
     kind: 'header',
@@ -105,8 +117,14 @@ function DemoPageContent({ pathname }) {
     case '/Login':
       content = <Login />
       break
+    case '/ApiTest':
+      content = <ApiTest />
+      break
+    case '/ApiTester':
+      content = <ApiTester />
+      break
     case '/DanhMucDuLieu/ToaNha':
-      content = <ToaNha ToaNhaData={ToaNhaData} />
+      content = <ToaNha />
       break
     case '/DanhMucDuLieu/Phong':
       content = <Phong />
