@@ -32,15 +32,17 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 
+// ToaNha routes - public for testing
+Route::apiResource('toa-nha', ToaNhaController::class);
+Route::get('toa-nha/{id}/phong', [ToaNhaController::class, 'getPhongs']);
+Route::get('toa-nha/search', [ToaNhaController::class, 'search']);
+
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', [AuthController::class, 'user']);
     Route::post('/logout', [AuthController::class, 'logout']);
 
-    // ToaNha routes
-    Route::apiResource('toa-nha', ToaNhaController::class);
-    Route::get('toa-nha/{id}/phong', [ToaNhaController::class, 'getPhongs']);
-    Route::get('toa-nha/search', [ToaNhaController::class, 'search']);
+    // ToaNha routes - moved to public
 
     // Phong routes
     Route::apiResource('phong', PhongController::class);
@@ -84,7 +86,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('chu-nha', ChuNhaController::class);
 });
 
-// Test route
+// Test routes
 Route::get('/test', function () {
     return response()->json(['message' => 'API is working!']);
+});
+
+Route::get('/ping', function () {
+    return response()->json([
+        'status' => 'success',
+        'message' => 'Kết nối thành công!',
+        'timestamp' => now()->toDateTimeString()
+    ]);
 });
