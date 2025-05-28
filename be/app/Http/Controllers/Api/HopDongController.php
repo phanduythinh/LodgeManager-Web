@@ -11,8 +11,58 @@ class HopDongController extends Controller
 {
     public function index(): JsonResponse
     {
-        $hopDongs = HopDong::with(['phong.toaNha', 'khachHangs', 'phiDichVus'])->get();
-        return response()->json($hopDongs);
+        try {
+            $hopDongs = HopDong::with(['phong.toaNha', 'khachHangs', 'phiDichVus'])->get();
+            
+            // Chuyển đổi dữ liệu để phù hợp với cấu trúc frontend
+            $formattedHopDongs = $hopDongs->map(function ($hopDong) {
+                return [
+                    'id' => $hopDong->id,
+                    'MaHopDong' => $hopDong->ma_hop_dong,
+                    'MaPhongId' => $hopDong->phong_id,
+                    'TenPhong' => $hopDong->phong ? $hopDong->phong->ten_phong : '',
+                    'MaNhaId' => $hopDong->phong && $hopDong->phong->toaNha ? $hopDong->phong->toaNha->id : null,
+                    'TenNha' => $hopDong->phong && $hopDong->phong->toaNha ? $hopDong->phong->toaNha->ten_nha : '',
+                    'NgayBatDau' => $hopDong->ngay_bat_dau,
+                    'NgayKetThuc' => $hopDong->ngay_ket_thuc,
+                    'TienThue' => $hopDong->tien_thue,
+                    'TienCoc' => $hopDong->tien_coc,
+                    'ChuKyThanhToan' => $hopDong->chu_ky_thanh_toan,
+                    'NgayTinhTien' => $hopDong->ngay_tinh_tien,
+                    'TrangThai' => $hopDong->trang_thai,
+                    'KhachHangs' => $hopDong->khachHangs ? $hopDong->khachHangs->map(function ($khachHang) {
+                        return [
+                            'id' => $khachHang->id,
+                            'MaKhachHang' => $khachHang->ma_khach_hang,
+                            'HoTen' => $khachHang->ho_ten,
+                            'SoDienThoai' => $khachHang->so_dien_thoai,
+                            'Email' => $khachHang->email,
+                            'CMND_CCCD' => $khachHang->cmnd_cccd
+                        ];
+                    })->toArray() : [],
+                    'DichVus' => $hopDong->phiDichVus ? $hopDong->phiDichVus->map(function ($dichVu) use ($hopDong) {
+                        $pivot = $dichVu->pivot;
+                        return [
+                            'id' => $dichVu->id,
+                            'MaDichVu' => $dichVu->ma_dich_vu,
+                            'TenDichVu' => $dichVu->ten_dich_vu,
+                            'DonGia' => $dichVu->don_gia,
+                            'DonViTinh' => $dichVu->don_vi_tinh,
+                            'MaCongTo' => $pivot ? $pivot->ma_cong_to : null,
+                            'ChiSoDau' => $pivot ? $pivot->chi_so_dau : null,
+                            'NgayTinhPhi' => $pivot ? $pivot->ngay_tinh_phi : null
+                        ];
+                    })->toArray() : []
+                ];
+            });
+            
+            return response()->json($formattedHopDongs);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Có lỗi xảy ra khi lấy danh sách hợp đồng: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     public function store(Request $request): JsonResponse

@@ -11,19 +11,37 @@ use Illuminate\Support\Facades\Log;
 
 class PhongController extends Controller
 {
-    public function index()
+    public function index(): \Illuminate\Http\JsonResponse
     {
         try {
-            $phongs = Phong::with(['toaNha', 'hopDong'])->paginate(10);
-            return response()->json([
-                'status' => 'success',
-                'data' => $phongs
-            ]);
+            $phongs = Phong::with(['toaNha', 'hopDongs'])->get();
+            
+            // Chuyển đổi dữ liệu để phù hợp với cấu trúc frontend
+            $formattedPhongs = $phongs->map(function ($phong) {
+                return [
+                    'id' => $phong->id,
+                    'MaPhong' => $phong->ma_phong,
+                    'TenPhong' => $phong->ten_phong,
+                    'Tang' => $phong->tang,
+                    'GiaThue' => $phong->gia_thue,
+                    'DatCoc' => $phong->dat_coc,
+                    'DienTich' => $phong->dien_tich,
+                    'SoKhachToiDa' => $phong->so_khach_toi_da,
+                    'TrangThai' => $phong->trang_thai,
+                    'MaNhaId' => $phong->toa_nha_id,
+                    'TenNha' => $phong->toaNha ? $phong->toaNha->ten_nha : '',
+                    'HopDongs' => $phong->hopDongs ? $phong->hopDongs->map(function ($hopDong) {
+                        return $hopDong->only(['id', 'ma_hop_dong', 'ngay_bat_dau', 'ngay_ket_thuc', 'trang_thai']);
+                    })->toArray() : []
+                ];
+            });
+            
+            return response()->json($formattedPhongs);
         } catch (\Exception $e) {
             Log::error('Lỗi khi lấy danh sách phòng: ' . $e->getMessage());
             return response()->json([
                 'status' => 'error',
-                'message' => 'Có lỗi xảy ra khi lấy danh sách phòng'
+                'message' => 'Có lỗi xảy ra khi lấy danh sách phòng: ' . $e->getMessage()
             ], 500);
         }
     }

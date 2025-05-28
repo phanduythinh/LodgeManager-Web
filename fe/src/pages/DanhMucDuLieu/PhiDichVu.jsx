@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { StyledTableCell, StyledTableRow } from '~/components/StyledTable'
 import {
   Table, TableBody, TableContainer,
   TableHead, TableRow, Paper, Button, Box, TextField, Dialog, DialogActions,
-  DialogContent, DialogTitle, Grid, Switch, FormControlLabel
+  DialogContent, DialogTitle, Grid, Switch, FormControlLabel, CircularProgress, Alert, Snackbar
 } from '@mui/material'
 import Autocomplete from '@mui/material/Autocomplete'
 import AddIcon from '@mui/icons-material/Add'
@@ -12,19 +12,19 @@ import Tooltip from '@mui/material/Tooltip'
 import DeleteIcon from '@mui/icons-material/Delete'
 import BorderColorIcon from '@mui/icons-material/BorderColor'
 import SearchIcon from '@mui/icons-material/Search'
-import { ToaNhaData } from '~/apis/mock-data'
 import { useConfirm } from 'material-ui-confirm'
 import { formatCurrency } from '~/components/formatCurrency'
+import { phiDichVuService, toaNhaService } from '~/apis/services'
 
 function PhiDichVu() {
-  const [rows, setRows] = useState(() =>
-    ToaNhaData.flatMap(toaNha =>
-      toaNha.PhiDichVus.map(phiDichVu => ({
-        ...phiDichVu,
-        TenNha: toaNha.TenNha
-      }))
-    )
-  )
+  const [rows, setRows] = useState([])
+  const [toaNhas, setToaNhas] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'success'
+  })
   const [open, setOpen] = useState(false)
   const [formData, setFormData] = useState({
     MaDichVu: '',
@@ -43,8 +43,68 @@ function PhiDichVu() {
   const [selectedTenNha, setSelectedTenNha] = useState(null)
   const confirm = useConfirm()
 
-  const handleDelete = (MaDichVu) => {
-    setRows(rows.filter(row => row.MaDichVu !== MaDichVu))
+  useEffect(() => {
+    fetchPhiDichVu()
+    fetchToaNha()
+  }, [])
+
+  const fetchPhiDichVu = async () => {
+    try {
+      setLoading(true)
+      const response = await phiDichVuService.getAll()
+      console.log('PhiDichVu API response:', response) // Log toàn bộ response để debug
+      
+      // Xử lý cả hai trường hợp: mảng trực tiếp hoặc object có thuộc tính data
+      let data = [];
+      if (Array.isArray(response)) {
+        data = response;
+      } else if (response && Array.isArray(response.data)) {
+        data = response.data;
+      }
+      
+      console.log('PhiDichVu processed data:', data) // Log dữ liệu đã xử lý
+      setRows(data)
+    } catch (error) {
+      console.error('Lỗi khi lấy danh sách phí dịch vụ:', error)
+      setSnackbar({
+        open: true,
+        message: 'Không thể tải danh sách phí dịch vụ',
+        severity: 'error'
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const fetchToaNha = async () => {
+    try {
+      const response = await toaNhaService.getAll()
+      setToaNhas(response.data)
+    } catch (error) {
+      console.error('Lỗi khi lấy danh sách tòa nhà:', error)
+    }
+  }
+
+  const handleDelete = async (id) => {
+    try {
+      setLoading(true)
+      await phiDichVuService.delete(id)
+      await fetchPhiDichVu()
+      setSnackbar({
+        open: true,
+        message: 'Xóa phí dịch vụ thành công',
+        severity: 'success'
+      })
+    } catch (error) {
+      console.error('Lỗi khi xóa phí dịch vụ:', error)
+      setSnackbar({
+        open: true,
+        message: 'Không thể xóa phí dịch vụ',
+        severity: 'error'
+      })
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleOpenAdd = () => {
@@ -103,17 +163,40 @@ function PhiDichVu() {
   }
 
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!validateForm()) return
 
-    if (editIndex === null) {
-      setRows(prev => [...prev, formData])
-    } else {
-      const updated = [...rows]
-      updated[editIndex] = formData
-      setRows(updated)
+    try {
+      setLoading(true)
+      if (editIndex === null) {
+        // Create new service
+        await phiDichVuService.create(formData)
+        setSnackbar({
+          open: true,
+          message: 'Thêm phí dịch vụ thành công',
+          severity: 'success'
+        })
+      } else {
+        // Update existing service
+        await phiDichVuService.update(formData.MaDichVu, formData)
+        setSnackbar({
+          open: true,
+          message: 'Cập nhật phí dịch vụ thành công',
+          severity: 'success'
+        })
+      }
+      await fetchPhiDichVu()
+      setOpen(false)
+    } catch (error) {
+      console.error('Lỗi khi lưu phí dịch vụ:', error)
+      setSnackbar({
+        open: true,
+        message: 'Không thể lưu phí dịch vụ',
+        severity: 'error'
+      })
+    } finally {
+      setLoading(false)
     }
-    setOpen(false)
   }
 
   const handleDeleteConfirm = (row) => {
@@ -128,19 +211,20 @@ function PhiDichVu() {
   }
 
   const filteredRows = rows.filter(row => {
-    if (filterToaNha && row.TenNha !== filterToaNha) return false
-    if (filterLoai && row.LoaiDichVu !== filterLoai) return false
-    if (searchText.trim() !== '') {
-      const text = searchText.toLowerCase()
-      if (!(
-        row.MaDichVu.toLowerCase().includes(text) ||
-        row.TenDichVu.toLowerCase().includes(text)
-      )) return false
-    }
-    return true
+    if (!row) return false;
+    
+    const matchSearch = searchText.trim() === '' || (
+      (row.MaDichVu && row.MaDichVu.toLowerCase().includes(searchText.toLowerCase())) ||
+      (row.TenDichVu && row.TenDichVu.toLowerCase().includes(searchText.toLowerCase()))
+    )
+
+    const matchToaNha = !filterToaNha || row.TenNha === filterToaNha
+    const matchLoai = !filterLoai || row.LoaiDichVu === filterLoai
+
+    return matchSearch && matchToaNha && matchLoai
   })
 
-  const listToaNha = [...new Set(ToaNhaData.map(p => p.TenNha))].map(nha => ({ title: nha }))
+  const listToaNha = [...new Set(toaNhas.map(p => p.TenNha))].map(nha => ({ title: nha }))
   const listLoaiDichVu = [
     { title: 'Tiền điện' },
     { title: 'Tiền nước' },
@@ -351,55 +435,88 @@ function PhiDichVu() {
       </Dialog >
 
 
-      <TableContainer component={Paper} sx={{ marginTop: '16px' }}>
-        <Table sx={{ minWidth: 700 }} aria-label="customized table">
-          <TableHead>
-            <TableRow>
-              <StyledTableCell>Mã dịch vụ</StyledTableCell>
-              <StyledTableCell>Tên dịch vụ</StyledTableCell>
-              <StyledTableCell>Loại dịch vụ</StyledTableCell>
-              <StyledTableCell align='right'>Giá tiền</StyledTableCell>
-              <StyledTableCell align='center'>Thao tác</StyledTableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {filteredRows.map((row, index) => (
-              <StyledTableRow key={row.MaDichVu}>
-                <StyledTableCell sx={{ p: '8px' }}>{row.MaDichVu}</StyledTableCell>
-                <StyledTableCell sx={{ p: '8px' }}>
-                  {row.TenDichVu}
-                  <Box sx={{ display: 'none' }}>{row.TenNha}</Box>
-                </StyledTableCell>
-                <StyledTableCell sx={{ p: '8px' }}>{row.LoaiDichVu}</StyledTableCell>
-                <StyledTableCell align='right' sx={{ p: '8px' }}>{formatCurrency(row.DonGia)}/{row.DonViTinh}</StyledTableCell>
-                <StyledTableCell sx={{ p: '8px' }}>
-                  <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
-                    <Tooltip title="Sửa">
-                      <Button
-                        variant="contained"
-                        sx={{ bgcolor: '#828688' }}
-                        onClick={() => handleOpenEdit(row, index)}
-                      >
-                        <BorderColorIcon fontSize='small' />
-                      </Button>
-                    </Tooltip>
-                    <Tooltip title="Xóa">
-                      <Button
-                        variant="contained"
-                        sx={{ bgcolor: '#EA5455' }}
-                        onClick={() => handleDeleteConfirm(row)}
-                      >
-                        <DeleteIcon fontSize='small' />
-                      </Button>
-                    </Tooltip>
-                  </Box>
-                </StyledTableCell>
-              </StyledTableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-    </Box >
+      {loading && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+          <CircularProgress />
+        </Box>
+      )}
+
+      {!loading && (
+        <TableContainer component={Paper} sx={{ marginTop: '16px' }}>
+          <Table sx={{ minWidth: 700 }} aria-label="customized table">
+            <TableHead>
+              <TableRow>
+                <StyledTableCell>Mã dịch vụ</StyledTableCell>
+                <StyledTableCell>Tên dịch vụ</StyledTableCell>
+                <StyledTableCell>Loại dịch vụ</StyledTableCell>
+                <StyledTableCell align='right'>Giá tiền</StyledTableCell>
+                <StyledTableCell align='center'>Thao tác</StyledTableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {filteredRows.length === 0 ? (
+                <TableRow>
+                  <StyledTableCell colSpan={5} align="center">Không có dữ liệu</StyledTableCell>
+                </TableRow>
+              ) : (
+                filteredRows.map((row, index) => (
+                  <StyledTableRow key={row.MaDichVu}>
+                    <StyledTableCell sx={{ p: '8px' }}>{row.MaDichVu}</StyledTableCell>
+                    <StyledTableCell sx={{ p: '8px' }}>
+                      {row.TenDichVu}
+                      <Box sx={{ color: '#B9B9C3' }}>Tòa nhà: {row.TenNha}</Box>
+                    </StyledTableCell>
+                    <StyledTableCell sx={{ p: '8px' }}>{row.LoaiDichVu}</StyledTableCell>
+                    <StyledTableCell align='right' sx={{ p: '8px' }}>{formatCurrency(row.DonGia)}/{row.DonViTinh}</StyledTableCell>
+                    <StyledTableCell sx={{ p: '8px' }}>
+                      <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+                        <Tooltip title="Sửa">
+                          <Button
+                            variant="contained"
+                            sx={{ bgcolor: '#828688' }}
+                            onClick={() => handleOpenEdit(row, index)}
+                          >
+                            <BorderColorIcon fontSize='small' />
+                          </Button>
+                        </Tooltip>
+                        <Tooltip title="Xóa">
+                          <Button
+                            variant="contained"
+                            sx={{ bgcolor: '#EA5455' }}
+                            onClick={() => handleDeleteConfirm(row)}
+                          >
+                            <DeleteIcon fontSize='small' />
+                          </Button>
+                        </Tooltip>
+                      </Box>
+                    </StyledTableCell>
+                  </StyledTableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
+      {loading && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+          <CircularProgress />
+        </Box>
+      )}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert
+          onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+    </Box>
   )
 }
 

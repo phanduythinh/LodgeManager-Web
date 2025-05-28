@@ -37,32 +37,32 @@ Route::apiResource('toa-nha', ToaNhaController::class);
 Route::get('toa-nha/{id}/phong', [ToaNhaController::class, 'getPhongs']);
 Route::get('toa-nha/search', [ToaNhaController::class, 'search']);
 
+// Phong routes - public for testing
+Route::apiResource('phong', PhongController::class);
+Route::get('phong/{id}/hop-dong', [PhongController::class, 'getHopDong']);
+Route::get('phong/{id}/hoa-don', [PhongController::class, 'getHoaDon']);
+Route::get('phong/search', [PhongController::class, 'search']);
+
+// PhiDichVu routes - public for testing
+Route::apiResource('phi-dich-vu', PhiDichVuController::class);
+Route::get('phi-dich-vu/search', [PhiDichVuController::class, 'search']);
+
+// KhachHang routes - public for testing
+Route::apiResource('khach-hang', KhachHangController::class);
+Route::get('khach-hang/search', [KhachHangController::class, 'search']);
+Route::get('khach-hang/{id}/hop-dong', [KhachHangController::class, 'getHopDongs']);
+
+// HopDong routes - public for testing
+Route::apiResource('hop-dong', HopDongController::class);
+Route::get('hop-dong/{id}/hoa-don', [HopDongController::class, 'getHoaDons']);
+Route::get('hop-dong/search', [HopDongController::class, 'search']);
+
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', [AuthController::class, 'user']);
     Route::post('/logout', [AuthController::class, 'logout']);
 
-    // ToaNha routes - moved to public
-
-    // Phong routes
-    Route::apiResource('phong', PhongController::class);
-    Route::get('phong/{id}/hop-dong', [PhongController::class, 'getHopDong']);
-    Route::get('phong/{id}/hoa-don', [PhongController::class, 'getHoaDon']);
-    Route::get('phong/search', [PhongController::class, 'search']);
-
-    // KhachHang routes
-    Route::apiResource('khach-hang', KhachHangController::class);
-    Route::get('khach-hang/search', [KhachHangController::class, 'search']);
-    Route::get('khach-hang/{id}/hop-dong', [KhachHangController::class, 'getHopDongs']);
-
-    // HopDong routes
-    Route::apiResource('hop-dong', HopDongController::class);
-    Route::get('hop-dong/{id}/hoa-don', [HopDongController::class, 'getHoaDons']);
-    Route::get('hop-dong/search', [HopDongController::class, 'search']);
-
-    // PhiDichVu routes
-    Route::apiResource('phi-dich-vu', PhiDichVuController::class);
-    Route::get('phi-dich-vu/search', [PhiDichVuController::class, 'search']);
+    // All routes moved to public for testing
 
     // HoaDon routes
     Route::apiResource('hoa-don', HoaDonController::class);

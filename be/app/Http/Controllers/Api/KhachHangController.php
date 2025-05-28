@@ -14,16 +14,41 @@ class KhachHangController extends Controller
     public function index()
     {
         try {
-            $khachHangs = KhachHang::with('hopDongs')->paginate(10);
-            return response()->json([
-                'status' => 'success',
-                'data' => $khachHangs
-            ]);
+            $khachHangs = KhachHang::with(['hopDongs', 'hopDongs.phong', 'hopDongs.phong.toaNha'])->get();
+            
+            // Chuyển đổi dữ liệu để phù hợp với cấu trúc frontend
+            $formattedKhachHangs = $khachHangs->map(function ($khachHang) {
+                return [
+                    'id' => $khachHang->id,
+                    'MaKhachHang' => $khachHang->ma_khach_hang,
+                    'HoTen' => $khachHang->ho_ten,
+                    'NgaySinh' => $khachHang->ngay_sinh,
+                    'GioiTinh' => $khachHang->gioi_tinh,
+                    'SoDienThoai' => $khachHang->so_dien_thoai,
+                    'Email' => $khachHang->email,
+                    'CMND_CCCD' => $khachHang->cmnd_cccd,
+                    'NgayCap' => $khachHang->ngay_cap,
+                    'NoiCap' => $khachHang->noi_cap,
+                    'DiaChi' => $khachHang->dia_chi,
+                    'TrangThai' => $khachHang->trang_thai,
+                    'HopDongs' => $khachHang->hopDongs ? $khachHang->hopDongs->map(function ($hopDong) {
+                        return [
+                            'id' => $hopDong->id,
+                            'MaHopDong' => $hopDong->ma_hop_dong,
+                            'TrangThai' => $hopDong->trang_thai,
+                            'TenPhong' => $hopDong->phong ? $hopDong->phong->ten_phong : '',
+                            'TenNha' => $hopDong->phong && $hopDong->phong->toaNha ? $hopDong->phong->toaNha->ten_nha : ''
+                        ];
+                    })->toArray() : []
+                ];
+            });
+            
+            return response()->json($formattedKhachHangs);
         } catch (\Exception $e) {
             Log::error('Lỗi khi lấy danh sách khách hàng: ' . $e->getMessage());
             return response()->json([
                 'status' => 'error',
-                'message' => 'Có lỗi xảy ra khi lấy danh sách khách hàng'
+                'message' => 'Có lỗi xảy ra khi lấy danh sách khách hàng: ' . $e->getMessage()
             ], 500);
         }
     }

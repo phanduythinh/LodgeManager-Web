@@ -6,6 +6,9 @@ import HopDong from '~/pages/KhachHang/HopDong'
 import KhachHang from './pages/KhachHang/KhachHang'
 import ApiTest from './components/ApiTest'
 import ApiTester from './components/ApiTester'
+import ConnectionTest from './components/ConnectionTest'
+import ApiConnectionTest from './components/ApiConnectionTest'
+import ApiTestSimple from './components/ApiTestSimple'
 // import Login from './pages/Login'
 
 import PropTypes from 'prop-types'
@@ -27,19 +30,19 @@ import LoginIcon from '@mui/icons-material/Login'
 import ApiIcon from '@mui/icons-material/Api'
 
 const NAVIGATION = [
+  // {
+  //   segment: 'Login',
+  //   title: 'Đăng nhập',
+  //   icon: <LoginIcon />
+  // },
   {
-    segment: 'Login',
-    title: 'Đăng nhập',
-    icon: <LoginIcon />
+    segment: 'ApiConnectionTest',
+    title: 'Kiểm tra kết nối API tổng thể',
+    icon: <ApiIcon />
   },
   {
     segment: 'ApiTest',
     title: 'Kiểm tra API',
-    icon: <ApiIcon />
-  },
-  {
-    segment: 'ApiTester',
-    title: 'Kiểm tra API Tòa Nhà',
     icon: <ApiIcon />
   },
   {
@@ -114,14 +117,23 @@ function DemoPageContent({ pathname }) {
   let content
 
   switch (pathname) {
-    case '/Login':
-      content = <Login />
+    // case '/Login':
+    //   content = <Login />
+    //   break
+    case '/ConnectionTest':
+      content = <ConnectionTest />
+      break
+    case '/ApiConnectionTest':
+      content = <ApiConnectionTest />
       break
     case '/ApiTest':
       content = <ApiTest />
       break
     case '/ApiTester':
       content = <ApiTester />
+      break
+    case '/ApiTestSimple':
+      content = <ApiTestSimple />
       break
     case '/DanhMucDuLieu/ToaNha':
       content = <ToaNha />
