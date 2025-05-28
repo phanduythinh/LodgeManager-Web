@@ -1,9 +1,9 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { StyledTableCell, StyledTableRow } from '~/components/StyledTable'
 import {
   Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, Paper, Button, Box, TextField, Dialog, DialogActions,
-  DialogContent, DialogTitle, Grid
+  DialogContent, DialogTitle, Grid, CircularProgress, Alert, Snackbar
 } from '@mui/material'
 import Autocomplete from '@mui/material/Autocomplete'
 import Popper from '@mui/material/Popper'
@@ -18,7 +18,7 @@ import PersonAddAltIcon from '@mui/icons-material/PersonAddAlt'
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline'
 
 import { useConfirm } from 'material-ui-confirm'
-import { ToaNhaData, HopDongs, KhachHangs } from '~/apis/mock-data'
+import { hopDongService, toaNhaService, phongService, khachHangService, phiDichVuService } from '~/apis/services'
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { DatePicker } from '@mui/x-date-pickers/DatePicker'
@@ -26,9 +26,82 @@ import dayjs from 'dayjs'
 import { formatCurrency } from '~/components/formatCurrency'
 
 function HopDong() {
-  const [rows, setRows] = useState(HopDongs)
-  const [listToaNha, setListToaNha] = useState(ToaNhaData);
+  const [rows, setRows] = useState([])
+  const [listToaNha, setListToaNha] = useState([]);
   const [listPhong, setListPhong] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'success'
+  });
+  
+  // Thêm useEffect để tải dữ liệu khi component mount
+  useEffect(() => {
+    fetchHopDong();
+    fetchToaNha();
+    fetchKhachHang();
+  }, []);
+  
+  // Hàm tải dữ liệu hợp đồng từ API
+  const fetchHopDong = async () => {
+    try {
+      setLoading(true);
+      const response = await hopDongService.getAll();
+      console.log('HopDong API response:', response); // Log toàn bộ response để debug
+      
+      // Xử lý cả hai trường hợp: mảng trực tiếp hoặc object có thuộc tính data
+      let data = [];
+      if (Array.isArray(response)) {
+        data = response;
+      } else if (response && Array.isArray(response.data)) {
+        data = response.data;
+      }
+      
+      // Kiểm tra xem mỗi hợp đồng có KhachHangs không, nếu không thì gán mảng rỗng
+      data = data.map(item => ({
+        ...item,
+        KhachHangs: Array.isArray(item.KhachHangs) ? item.KhachHangs : [],
+        DichVus: Array.isArray(item.DichVus) ? item.DichVus : []
+      }));
+      
+      console.log('HopDong processed data:', data); // Log dữ liệu đã xử lý
+      setRows(data);
+    } catch (error) {
+      console.error('Lỗi khi lấy danh sách hợp đồng:', error);
+      setSnackbar({
+        open: true,
+        message: 'Không thể tải danh sách hợp đồng',
+        severity: 'error'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Hàm tải danh sách tòa nhà từ API
+  const fetchToaNha = async () => {
+    try {
+      const response = await toaNhaService.getAll();
+      const data = Array.isArray(response) ? response : 
+                  (response && Array.isArray(response.data)) ? response.data : [];
+      setListToaNha(data);
+    } catch (error) {
+      console.error('Lỗi khi lấy danh sách tòa nhà:', error);
+    }
+  };
+  
+  // Hàm tải danh sách khách hàng từ API
+  const fetchKhachHang = async () => {
+    try {
+      const response = await khachHangService.getAll();
+      const data = Array.isArray(response) ? response : 
+                  (response && Array.isArray(response.data)) ? response.data : [];
+      setDanhSachKhachHang(data);
+    } catch (error) {
+      console.error('Lỗi khi lấy danh sách khách hàng:', error);
+    }
+  };
 
   const [open, setOpen] = useState(false)
   const [formData, setFormData] = useState({
@@ -38,10 +111,16 @@ function HopDong() {
   const [editId, setEditId] = useState(null)
   const [filterStatus, setFilterStatus] = useState(null)
   const [searchKeyword, setSearchKeyword] = useState('')
+  const [filteredRows, setFilteredRows] = useState([]);
+
+  useEffect(() => {
+    setFilteredRows(rows);
+  }, [rows]);
 
   const [openKhachHangDialog, setOpenKhachHangDialog] = useState(false)
   const [selectedKhachHangs, setSelectedKhachHangs] = useState([])
   const [khachHangDuocChon, setKhachHangDuocChon] = useState([])
+  const [danhSachKhachHang, setDanhSachKhachHang] = useState([])
 
   const [openDichVuDialog, setOpenDichVuDialog] = useState(false)
   const [selectedDichVus, setSelectedDichVus] = useState([])
@@ -64,17 +143,17 @@ function HopDong() {
   }
   // Handler chọn/bỏ chọn tất cả
   // Kiểm tra chọn bỏ chọn hết chưa
-  const isAllSelected = selectedKhachHangs.length === KhachHangs.length
+  const isAllSelected = selectedKhachHangs.length === danhSachKhachHang.length
   const isIndeterminate = selectedKhachHangs.length > 0 && !isAllSelected
   const handleSelectAll = () => {
     if (isAllSelected) {
       setSelectedKhachHangs([]);
     } else {
-      setSelectedKhachHangs(KhachHangs.map(kh => kh.MaKhachHang))
+      setSelectedKhachHangs(danhSachKhachHang.map(kh => kh.MaKhachHang))
     }
   }
   const handleAddKhachHang = () => {
-    const khachDuocThem = KhachHangs.filter(kh => selectedKhachHangs.includes(kh.MaKhachHang));
+    const khachDuocThem = danhSachKhachHang.filter(kh => selectedKhachHangs.includes(kh.MaKhachHang));
     setKhachHangDuocChon(khachDuocThem);
     setFormData(prev => ({
       ...prev,
@@ -91,10 +170,25 @@ function HopDong() {
     setOpenDichVuDialog(false)
   }
   // Lấy danh sách dịch vụ từ tòa nhà được chọn
-  const dichVusTuToaNha = useMemo(() => {
-    const toaNha = ToaNhaData.find(tn => tn.MaNha === formData.MaNhaId)
-    return toaNha?.PhiDichVus || []
+  const [dichVusTuToaNha, setDichVusTuToaNha] = useState([])
+  
+  // Fetch dịch vụ của tòa nhà khi MaNhaId thay đổi
+  useEffect(() => {
+    if (formData.MaNhaId) {
+      fetchDichVuByToaNha(formData.MaNhaId);
+    }
   }, [formData.MaNhaId])
+  
+  const fetchDichVuByToaNha = async (maNha) => {
+    try {
+      const response = await phiDichVuService.getAll();
+      // Lọc dịch vụ theo tòa nhà
+      const dichVuCuaToaNha = response.data.filter(dv => dv.MaNhaId === maNha);
+      setDichVusTuToaNha(dichVuCuaToaNha);
+    } catch (error) {
+      console.error('Lỗi khi lấy danh sách dịch vụ:', error);
+    }
+  }
   // Logic chọn/bỏ chọn từng dịch vụ
   const handleToggleDichVu = (maDichVu) => {
     setSelectedDichVus(prev =>
@@ -158,21 +252,55 @@ function HopDong() {
 
 
   const handleOpenAdd = () => {
-    setFormData({
-      MaHopDong: '', TenNha: '', MaNhaId: '', TenPhong: '', MaPhongId: '', NgayBatDau: null, NgayKetThuc: null, TienThue: '', TienCoc: '', ChuKyThanhToan: '', NgayTinhTien: null, KhachHangs: [], DichVus: [], TrangThai: ''
-    })
-    setErrors({})
-    setEditId(null)
-    setKhachHangDuocChon([])
-    setDichVuDuocChon([])
-    setSelectedKhachHangs([])
-    setSelectedDichVus([])
-    setListPhong([])
     setOpen(true)
+    setEditId(null)
+    setFormData({
+      MaHopDong: '',
+      MaNhaId: '',
+      MaPhongId: '',
+      TenNha: '',
+      TenPhong: '',
+      NgayBatDau: '',
+      NgayKetThuc: '',
+      TienThue: '',
+      TienCoc: '',
+      ChuKyThanhToan: '',
+      NgayTinhTien: '',
+      KhachHangs: [],
+      DichVus: [],
+      TrangThai: ''
+    })
   }
 
-  const handleDelete = (maKH) => {
-    setRows(rows.filter(row => row.MaHopDong !== maKH))
+  const fetchPhongByToaNha = async (maNha) => {
+    try {
+      const response = await toaNhaService.getPhongs(maNha);
+      setListPhong(response.data);
+    } catch (error) {
+      console.error('Lỗi khi lấy danh sách phòng:', error);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    try {
+      setLoading(true);
+      await hopDongService.delete(id);
+      await fetchHopDong();
+      setSnackbar({
+        open: true,
+        message: 'Xóa hợp đồng thành công',
+        severity: 'success'
+      });
+    } catch (error) {
+      console.error('Lỗi khi xóa hợp đồng:', error);
+      setSnackbar({
+        open: true,
+        message: 'Không thể xóa hợp đồng',
+        severity: 'error'
+      });
+    } finally {
+      setLoading(false);
+    }
   }
 
   // Trong phần thêm hợp đồng
@@ -210,33 +338,41 @@ function HopDong() {
   }
 
   const handleAutoChange = (field, value) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-      ...(field === 'MaNhaId' && { MaPhongId: '', TenPhong: '' }) // reset phòng khi đổi tòa nhà
-    }));
+    if (field === 'TenNha') {
+      // Khi chọn tòa nhà, lấy MaNhaId và reset TenPhong
+      const toaNha = listToaNha.find(tn => tn.TenNha === value)
+      const maNhaId = toaNha?.MaNha || ''
 
-    if (field === 'MaNhaId') {
-      const selectedToaNha = listToaNha.find((n) => n.MaNha === value);
-      if (selectedToaNha) {
-        setListPhong(selectedToaNha.Phongs || []);
-        setFormData((prev) => ({ ...prev, TenNha: selectedToaNha.TenNha }));
+      // Lấy danh sách phòng của tòa nhà từ API
+      if (maNhaId) {
+        fetchPhongByToaNha(maNhaId);
       } else {
         setListPhong([]);
-        setFormData((prev) => ({ ...prev, TenNha: '' }));
       }
-    } else if (field === 'MaPhongId') {
-      const selectedPhong = listPhong.find((p) => p.MaPhong === value);
-      if (selectedPhong) {
-        setFormData((prev) => ({ ...prev, TenPhong: selectedPhong.TenPhong }));
-      } else {
-        setFormData((prev) => ({ ...prev, TenPhong: '' }));
-      }
-    }
 
-    // Clear error for the field if a value is selected
-    if (value) {
-      setErrors((prev) => ({ ...prev, [field]: '' }));
+      setFormData(prev => ({
+        ...prev,
+        TenNha: value,
+        MaNhaId: maNhaId,
+        TenPhong: '',
+        MaPhongId: ''
+      }))
+    } else if (field === 'TenPhong') {
+      // Khi chọn phòng, lấy MaPhongId và GiaThue
+      const phong = listPhong.find(p => p.TenPhong === value)
+      const maPhongId = phong?.MaPhong || ''
+      const giaThue = phong?.GiaThue || ''
+      const datCoc = phong?.DatCoc || ''
+
+      setFormData(prev => ({
+        ...prev,
+        TenPhong: value,
+        MaPhongId: maPhongId,
+        TienThue: giaThue,
+        TienCoc: datCoc
+      }))
+    } else {
+      setFormData(prev => ({ ...prev, [field]: value }))
     }
   };
 
@@ -332,10 +468,10 @@ function HopDong() {
   }
 
   // Tìm kiếm
-  const filteredRows = Array.isArray(rows)
-    ? rows.filter((row) => {
+  const handleSearch = () => {
+    const keyword = searchKeyword.toLowerCase();
+    const filtered = rows.filter((row) => {
       const matchesStatus = filterStatus ? row.TrangThai === filterStatus : true;
-      const keyword = searchKeyword.toLowerCase();
       const matchesSearch =
         (row.MaHopDong?.toLowerCase().includes(keyword) || false) ||
         (row.TenNha?.toLowerCase().includes(keyword) || false) || // Tìm kiếm theo tên tòa nhà
@@ -343,8 +479,9 @@ function HopDong() {
         (row.KhachHangs[0]?.HoTen?.toLowerCase().includes(keyword) || false) || // Tìm kiếm theo tên khách hàng đại diện
         (row.TrangThai?.toLowerCase().includes(keyword) || false);
       return matchesStatus && matchesSearch;
-    })
-    : [];
+    });
+    setFilteredRows(filtered);
+  };
 
   const listChuKyThanhToan = [
     { title: '1 tháng' },
@@ -428,6 +565,7 @@ function HopDong() {
             )
           }}
         />
+        <Button variant="contained" onClick={handleSearch}>Tìm kiếm</Button>
       </Box>
 
       {/* Dialog Thêm/Sửa hợp đồng */}
@@ -783,7 +921,7 @@ function HopDong() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {KhachHangs.map((kh) => (
+              {danhSachKhachHang.map((kh) => (
                 <TableRow key={kh.MaKhachHang}>
                   <TableCell padding="checkbox">
                     <Checkbox
@@ -878,9 +1016,9 @@ function HopDong() {
               <StyledTableRow key={row.MaHopDong}>
                 <StyledTableCell sx={{ p: '8px' }}>{row.MaHopDong}</StyledTableCell>
                 <StyledTableCell sx={{ p: '8px' }}>
-                  <Box>{row.KhachHangs[0].HoTen}</Box>
-                  <Box sx={{ color: '#B9B9C3' }}>Tòa nhà: {row.TenNha}</Box>
-                  <Box sx={{ color: '#B9B9C3' }}>{row.TenPhong}</Box>
+                  <Box>{row.KhachHangs && row.KhachHangs.length > 0 ? row.KhachHangs[0].HoTen : 'Không có'}</Box>
+                  <Box sx={{ color: '#B9B9C3' }}>Tòa nhà: {row.TenNha || 'Không có'}</Box>
+                  <Box sx={{ color: '#B9B9C3' }}>{row.TenPhong || 'Không có'}</Box>
                 </StyledTableCell>
                 <StyledTableCell sx={{ p: '8px' }}>{formatCurrency(row.TienThue)}</StyledTableCell>
                 <StyledTableCell sx={{ p: '8px' }}>{row.NgayBatDau}</StyledTableCell>
@@ -929,7 +1067,26 @@ function HopDong() {
           </TableBody>
         </Table>
       </TableContainer>
-    </Box >
+      {loading && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+          <CircularProgress />
+        </Box>
+      )}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert
+          onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+    </Box>
   )
 }
 

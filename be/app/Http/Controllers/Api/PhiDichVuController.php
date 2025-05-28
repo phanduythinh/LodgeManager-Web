@@ -14,35 +14,28 @@ class PhiDichVuController extends Controller
     public function index(Request $request)
     {
         try {
-            $query = PhiDichVu::query();
-
-            if ($request->has('keyword')) {
-                $keyword = $request->keyword;
-                $query->where(function ($q) use ($keyword) {
-                    $q->where('ten', 'like', "%{$keyword}%")
-                        ->orWhere('mo_ta', 'like', "%{$keyword}%");
-                });
-            }
-
-            if ($request->has('trang_thai')) {
-                $query->where('trang_thai', $request->trang_thai);
-            }
-
-            if ($request->has('loai_dich_vu')) {
-                $query->where('loai_dich_vu', $request->loai_dich_vu);
-            }
-
-            $phiDichVus = $query->paginate(10);
-
-            return response()->json([
-                'status' => 'success',
-                'data' => $phiDichVus
-            ]);
+            $phiDichVus = PhiDichVu::with('toaNha')->get();
+            
+            // Chuyển đổi dữ liệu để phù hợp với cấu trúc frontend
+            $formattedPhiDichVus = $phiDichVus->map(function ($phiDichVu) {
+                return [
+                    'id' => $phiDichVu->id,
+                    'MaDichVu' => $phiDichVu->ma_dich_vu,
+                    'TenDichVu' => $phiDichVu->ten_dich_vu,
+                    'LoaiDichVu' => $phiDichVu->loai_dich_vu,
+                    'DonGia' => $phiDichVu->don_gia,
+                    'DonViTinh' => $phiDichVu->don_vi_tinh,
+                    'MaNhaId' => $phiDichVu->toa_nha_id,
+                    'TenNha' => $phiDichVu->toaNha ? $phiDichVu->toaNha->ten_nha : ''
+                ];
+            });
+            
+            return response()->json($formattedPhiDichVus);
         } catch (\Exception $e) {
             Log::error('Lỗi khi lấy danh sách phí dịch vụ: ' . $e->getMessage());
             return response()->json([
                 'status' => 'error',
-                'message' => 'Có lỗi xảy ra khi lấy danh sách phí dịch vụ'
+                'message' => 'Có lỗi xảy ra khi lấy danh sách phí dịch vụ: ' . $e->getMessage()
             ], 500);
         }
     }

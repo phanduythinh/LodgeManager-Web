@@ -3,7 +3,7 @@ import { StyledTableCell, StyledTableRow } from '~/components/StyledTable'
 import {
   Table, TableBody, TableContainer,
   TableHead, TableRow, Paper, Button, Box, TextField, Dialog, DialogActions,
-  DialogContent, DialogTitle, Grid
+  DialogContent, DialogTitle, Grid, CircularProgress, Alert, Snackbar
 } from '@mui/material'
 import Autocomplete from '@mui/material/Autocomplete'
 import AddIcon from '@mui/icons-material/Add'
@@ -14,7 +14,7 @@ import BorderColorIcon from '@mui/icons-material/BorderColor'
 import SearchIcon from '@mui/icons-material/Search'
 import { useConfirm } from 'material-ui-confirm'
 import { getProvinces, getDistrictsByProvinceCode, getWardsByDistrictCode } from 'sub-vn'
-import { KhachHangs } from '~/apis/mock-data'
+import { khachHangService } from '~/apis/services'
 
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
@@ -22,7 +22,13 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker'
 import dayjs from 'dayjs'
 
 function KhachHang() {
-  const [rows, setRows] = useState(KhachHangs)
+  const [rows, setRows] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'success'
+  })
   const [open, setOpen] = useState(false)
   const [formData, setFormData] = useState({
     MaKhachHang: '', HoTen: '', SoDienThoai: '', Email: '', CCCD: '', GioiTinh: '', NgaySinh: '', DiaChiNha: '', XaPhuong: '', QuanHuyen: '', TinhThanh: ''
@@ -40,7 +46,35 @@ function KhachHang() {
 
   useEffect(() => {
     setProvinces(getProvinces())
+    fetchKhachHang()
   }, [])
+  
+  const fetchKhachHang = async () => {
+    try {
+      setLoading(true)
+      const response = await khachHangService.getAll()
+      console.log('KhachHang API response:', response) // Log toàn bộ response để debug
+      
+      // Xử lý cả hai trường hợp: mảng trực tiếp hoặc object có thuộc tính data
+      let data = [];
+      if (Array.isArray(response)) {
+        data = response;
+      } else if (response && Array.isArray(response.data)) {
+        data = response.data;
+      }
+      
+      console.log('KhachHang processed data:', data) // Log dữ liệu đã xử lý
+      setRows(data)
+    } catch (error) {
+      setSnackbar({
+        open: true,
+        message: 'Không thể tải danh sách khách hàng',
+        severity: 'error'
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
 
   // Khi mở dialog sửa, set lại districts và wards theo TinhThanh và QuanHuyen hiện tại
   const handleOpenEdit = (row) => {
@@ -99,8 +133,26 @@ function KhachHang() {
     setOpen(true)
   }
 
-  const handleDelete = (maKH) => {
-    setRows(rows.filter(row => row.MaKhachHang !== maKH))
+  const handleDelete = async (id) => {
+    try {
+      setLoading(true)
+      await khachHangService.delete(id)
+      await fetchKhachHang()
+      setSnackbar({
+        open: true,
+        message: 'Xóa khách hàng thành công',
+        severity: 'success'
+      })
+    } catch (error) {
+      console.error('Lỗi khi xóa khách hàng:', error)
+      setSnackbar({
+        open: true,
+        message: 'Không thể xóa khách hàng',
+        severity: 'error'
+      })
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleClose = () => setOpen(false)
@@ -525,7 +577,26 @@ function KhachHang() {
           </TableBody>
         </Table>
       </TableContainer>
-    </Box >
+      {loading && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+          <CircularProgress />
+        </Box>
+      )}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert
+          onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+    </Box>
   )
 }
 

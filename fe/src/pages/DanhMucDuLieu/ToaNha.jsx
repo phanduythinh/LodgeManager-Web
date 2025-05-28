@@ -49,7 +49,11 @@ function ToaNha() {
     try {
       setLoading(true)
       const response = await toaNhaService.getAll()
-      setRows(response.data)
+      // Xử lý cả hai trường hợp: mảng trực tiếp hoặc object có thuộc tính data
+      const data = Array.isArray(response) ? response : 
+                 (response && response.data) ? response.data : []
+      console.log('ToaNha data:', data) // Log để debug
+      setRows(data)
     } catch (error) {
       console.error('Lỗi khi lấy danh sách tòa nhà:', error)
       setSnackbar({
