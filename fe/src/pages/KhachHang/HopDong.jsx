@@ -155,9 +155,14 @@ function HopDong() {
   const handleAddKhachHang = () => {
     const khachDuocThem = danhSachKhachHang.filter(kh => selectedKhachHangs.includes(kh.MaKhachHang));
     setKhachHangDuocChon(khachDuocThem);
+  
+    // Lưu toàn bộ đối tượng khách hàng để có thể hiển thị đúng trong giao diện
+    // Nhưng chỉ gửi id và MaKhachHang đến backend để xử lý
+    console.log('Khách hàng được chọn:', khachDuocThem);
+  
     setFormData(prev => ({
       ...prev,
-      KhachHangs: khachDuocThem.map(kh => kh.MaKhachHang)
+      KhachHangs: khachDuocThem
     }));
     setOpenKhachHangDialog(false);
   };
@@ -181,12 +186,42 @@ function HopDong() {
   
   const fetchDichVuByToaNha = async (maNha) => {
     try {
+      setLoading(true);
+      console.log('Fetching services for building:', maNha);
       const response = await phiDichVuService.getAll();
-      // Lọc dịch vụ theo tòa nhà
-      const dichVuCuaToaNha = response.data.filter(dv => dv.MaNhaId === maNha);
+      console.log('Dịch vụ API response:', response);
+      
+      // Xử lý cả hai trường hợp: mảng trực tiếp hoặc object có thuộc tính data
+      let data = [];
+      if (Array.isArray(response)) {
+        data = response;
+      } else if (response && Array.isArray(response.data)) {
+        data = response.data;
+      }
+      
+      // Lọc dịch vụ theo tòa nhà - kiểm tra cả MaNhaId và ToaNhaId
+      const dichVuCuaToaNha = data.filter(dv => 
+        (dv.MaNhaId && dv.MaNhaId.toString() === maNha.toString()) || 
+        (dv.ToaNhaId && dv.ToaNhaId.toString() === maNha.toString()) ||
+        (dv.MaNha && dv.MaNha.toString() === maNha.toString())
+      );
+      
+      console.log('Dịch vụ của tòa nhà:', dichVuCuaToaNha);
       setDichVusTuToaNha(dichVuCuaToaNha);
+      
+      // Nếu không có dịch vụ nào, hiển thị thông báo
+      if (dichVuCuaToaNha.length === 0) {
+        console.warn('Không tìm thấy dịch vụ nào cho tòa nhà này');
+      }
     } catch (error) {
       console.error('Lỗi khi lấy danh sách dịch vụ:', error);
+      setSnackbar({
+        open: true,
+        message: 'Không thể tải danh sách dịch vụ',
+        severity: 'error'
+      });
+    } finally {
+      setLoading(false);
     }
   }
   // Logic chọn/bỏ chọn từng dịch vụ
@@ -220,14 +255,95 @@ function HopDong() {
   };
 
   const handleOpenEdit = (row) => {
-    const selectedToaNha = ToaNhaData.find(tn => tn.TenNha === row.TenNha);
-    const initialPhongs = selectedToaNha ? selectedToaNha.Phongs : [];
-    setListPhong(initialPhongs);
+    console.log('Dữ liệu hợp đồng cần chỉnh sửa:', row);
+    const selectedToaNha = listToaNha.find(tn => tn.TenNha === row.TenNha);
+
+    // Lấy danh sách phòng của tòa nhà đã chọn
+    if (selectedToaNha) {
+      fetchPhongByToaNha(selectedToaNha.MaNha);
+      // Đồng thời lấy danh sách dịch vụ của tòa nhà
+      fetchDichVuByToaNha(selectedToaNha.MaNha);
+    }
+
+    // Đảm bảo dữ liệu khách hàng có đầy đủ thông tin
+    const fetchKhachHangData = async () => {
+      try {
+        // Tải lại danh sách khách hàng để đảm bảo có dữ liệu mới nhất
+        const response = await khachHangService.getAll();
+        console.log('Response từ khachHangService.getAll():', response);
+        
+        // Xử lý cả hai trường hợp: mảng trực tiếp hoặc object có thuộc tính data
+        let khachHangList = [];
+        if (Array.isArray(response)) {
+          khachHangList = response;
+        } else if (response && Array.isArray(response.data)) {
+          khachHangList = response.data;
+        } else {
+          console.error('Dữ liệu khách hàng không đúng định dạng:', response);
+          khachHangList = [];
+        }
+        
+        setDanhSachKhachHang(khachHangList);
+        
+        // Đảm bảo khách hàng trong hợp đồng có đầy đủ thông tin
+        let khachHangDayDu = [];
+        if (row.KhachHangs && row.KhachHangs.length > 0) {
+          // Sử dụng dữ liệu khách hàng hiện có
+          khachHangDayDu = row.KhachHangs;
+        }
+        
+        console.log('Khách hàng đầy đủ thông tin:', khachHangDayDu);
+        setKhachHangDuocChon(khachHangDayDu);
+        setSelectedKhachHangs(khachHangDayDu.map(kh => kh.MaKhachHang || kh.id));
+      } catch (error) {
+        console.error('Lỗi khi tải thông tin khách hàng:', error);
+      }
+    };
+
+    // Đảm bảo dữ liệu dịch vụ có đầy đủ thông tin
+    const fetchDichVuData = async () => {
+      try {
+        // Tải lại danh sách dịch vụ để đảm bảo có dữ liệu mới nhất
+        const response = await phiDichVuService.getAll();
+        console.log('Response từ phiDichVuService.getAll():', response);
+        
+        // Xử lý cả hai trường hợp: mảng trực tiếp hoặc object có thuộc tính data
+        let dichVuList = [];
+        if (Array.isArray(response)) {
+          dichVuList = response;
+        } else if (response && Array.isArray(response.data)) {
+          dichVuList = response.data;
+        } else {
+          console.error('Dữ liệu dịch vụ không đúng định dạng:', response);
+          dichVuList = [];
+        }
+        
+        // Lưu danh sách dịch vụ cho dialog chọn
+        setDichVusTuToaNha(dichVuList);
+        
+        // Đảm bảo dịch vụ trong hợp đồng có đầy đủ thông tin
+        let dichVuDayDu = [];
+        if (row.DichVus && row.DichVus.length > 0) {
+          // Sử dụng dữ liệu dịch vụ hiện có
+          dichVuDayDu = row.DichVus;
+        }
+        
+        console.log('Dịch vụ đầy đủ thông tin:', dichVuDayDu);
+        setDichVuDuocChon(dichVuDayDu);
+        setSelectedDichVus(dichVuDayDu.map(dv => dv.MaDichVu || dv.id));
+      } catch (error) {
+        console.error('Lỗi khi tải thông tin dịch vụ:', error);
+      }
+    };
+
+    // Gọi các hàm tải dữ liệu
+    fetchKhachHangData();
+    fetchDichVuData();
 
     setFormData({
       MaHopDong: row.MaHopDong || '',
       MaNhaId: selectedToaNha?.MaNha || '',
-      MaPhongId: initialPhongs.find(p => p.TenPhong === row.TenPhong)?.MaPhong || '',
+      MaPhongId: row.MaPhongId || row.phong_id || '',
       TenNha: row.TenNha || '',
       TenPhong: row.TenPhong || '',
       NgayBatDau: row.NgayBatDau ? dayjs(row.NgayBatDau, 'DD/MM/YYYY') : null,
@@ -236,24 +352,17 @@ function HopDong() {
       TienThue: row.TienThue || '',
       TienCoc: row.TienCoc || '',
       ChuKyThanhToan: row.ChuKyThanhToan || '',
-      KhachHangs: row.KhachHangs || [],
-      DichVus: row.DichVus || [],
       TrangThai: row.TrangThai || ''
     });
 
-    setKhachHangDuocChon(row.KhachHangs || []); // Khách hàng đã có trong hợp đồng
-    setSelectedKhachHangs(row.KhachHangs.map(kh => kh.MaKhachHang) || []); // Lấy MaKhachHang cho dialog chọn
-    setDichVuDuocChon(row.DichVus || []); // Dịch vụ đã có trong hợp đồng
-    setSelectedDichVus(row.DichVus.map(dv => dv.MaDichVu) || []); // Lấy MaDichVu cho dialog chọn
-    setEditId(row.MaHopDong)
-    setErrors({})
-    setOpen(true)
+    setEditId(row.id || row.MaHopDong);
+    setErrors({});
+    setOpen(true);
   };
 
-
   const handleOpenAdd = () => {
-    setOpen(true)
-    setEditId(null)
+    setOpen(true);
+    setEditId(null);
     setFormData({
       MaHopDong: '',
       MaNhaId: '',
@@ -269,15 +378,35 @@ function HopDong() {
       KhachHangs: [],
       DichVus: [],
       TrangThai: ''
-    })
-  }
+    });
+    setKhachHangDuocChon([]);
+    setDichVuDuocChon([]);
+    setSelectedKhachHangs([]);
+    setSelectedDichVus([]);
+  };
 
   const fetchPhongByToaNha = async (maNha) => {
     try {
+      console.log('Fetching rooms for building:', maNha);
       const response = await toaNhaService.getPhongs(maNha);
-      setListPhong(response.data);
+      
+      // Xử lý cả hai trường hợp: mảng trực tiếp hoặc object có thuộc tính data
+      let data = [];
+      if (Array.isArray(response)) {
+        data = response;
+      } else if (response && Array.isArray(response.data)) {
+        data = response.data;
+      }
+      
+      console.log('Fetched rooms:', data);
+      setListPhong(data);
     } catch (error) {
       console.error('Lỗi khi lấy danh sách phòng:', error);
+      setSnackbar({
+        open: true,
+        message: 'Không thể tải danh sách phòng',
+        severity: 'error'
+      });
     }
   };
 
@@ -338,41 +467,51 @@ function HopDong() {
   }
 
   const handleAutoChange = (field, value) => {
-    if (field === 'TenNha') {
-      // Khi chọn tòa nhà, lấy MaNhaId và reset TenPhong
-      const toaNha = listToaNha.find(tn => tn.TenNha === value)
-      const maNhaId = toaNha?.MaNha || ''
+    if (field === 'MaNhaId') {
+      // Khi chọn tòa nhà, lấy thông tin và reset phòng
+      const toaNha = listToaNha.find(tn => tn.MaNha === value);
+      const tenNha = toaNha?.TenNha || '';
 
       // Lấy danh sách phòng của tòa nhà từ API
-      if (maNhaId) {
-        fetchPhongByToaNha(maNhaId);
+      if (value) {
+        fetchPhongByToaNha(value);
       } else {
         setListPhong([]);
       }
 
       setFormData(prev => ({
         ...prev,
-        TenNha: value,
-        MaNhaId: maNhaId,
-        TenPhong: '',
-        MaPhongId: ''
-      }))
-    } else if (field === 'TenPhong') {
-      // Khi chọn phòng, lấy MaPhongId và GiaThue
-      const phong = listPhong.find(p => p.TenPhong === value)
-      const maPhongId = phong?.MaPhong || ''
-      const giaThue = phong?.GiaThue || ''
-      const datCoc = phong?.DatCoc || ''
+        MaNhaId: value,
+        TenNha: tenNha,
+        MaPhongId: '',
+        TenPhong: ''
+      }));
+      
+      // Xóa lỗi nếu đã chọn giá trị
+      if (value) {
+        setErrors(prev => ({ ...prev, MaNhaId: '' }));
+      }
+    } else if (field === 'MaPhongId') {
+      // Khi chọn phòng, lấy thông tin và giá thuê
+      const phong = listPhong.find(p => p.MaPhong === value);
+      const tenPhong = phong?.TenPhong || '';
+      const giaThue = phong?.GiaThue || '';
+      const datCoc = phong?.DatCoc || '';
 
       setFormData(prev => ({
         ...prev,
-        TenPhong: value,
-        MaPhongId: maPhongId,
+        MaPhongId: value,
+        TenPhong: tenPhong,
         TienThue: giaThue,
         TienCoc: datCoc
-      }))
+      }));
+      
+      // Xóa lỗi nếu đã chọn giá trị
+      if (value) {
+        setErrors(prev => ({ ...prev, MaPhongId: '' }));
+      }
     } else {
-      setFormData(prev => ({ ...prev, [field]: value }))
+      setFormData(prev => ({ ...prev, [field]: value }));
     }
   };
 
@@ -393,66 +532,97 @@ function HopDong() {
     if (dichVuDuocChon.length === 0) {
       newErrors.DichVus = 'Cần thêm ít nhất một dịch vụ';
     }
-
+    
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!validateForm()) return;
 
-    const selectedToaNha = listToaNha.find(n => n.MaNha === formData.MaNhaId)
-    const selectedPhong = listPhong.find(p => p.MaPhong === formData.MaPhongId)
+    try {
+      setLoading(true);
+      const selectedToaNha = listToaNha.find(n => n.MaNha === formData.MaNhaId)
+      const selectedPhong = listPhong.find(p => p.MaPhong === formData.MaPhongId)
 
-    const newData = {
-      ...formData,
-      TenNha: selectedToaNha ? selectedToaNha.TenNha : '',
-      MaNhaId: selectedToaNha ? selectedToaNha.MaNha : '', // Đảm bảo lưu MaNhaId
-      TenPhong: selectedPhong ? selectedPhong.TenPhong : '',
-      MaPhongId: selectedPhong ? selectedPhong.MaPhong : '', // Đảm bảo lưu MaPhongId
-      KhachHangs: khachHangDuocChon, // Lưu toàn bộ đối tượng khách hàng
-      DichVus: dichVuDuocChon.map(dv => ({ // Lưu toàn bộ đối tượng dịch vụ với các trường MaCongTo, ChiSoDau, NgayTinhPhi
-        ...dv,
-        MaCongTo: dv.MaCongTo || '',
-        ChiSoDau: dv.ChiSoDau || '',
-        NgayTinhPhi: dv.NgayTinhPhi // Dùng định dạng đã có hoặc format lại nếu cần
-      })),
-      NgayBatDau: formData.NgayBatDau && formData.NgayBatDau.format
-        ? formData.NgayBatDau.format('DD/MM/YYYY')
-        : formData.NgayBatDau,
-      NgayKetThuc: formData.NgayKetThuc && formData.NgayKetThuc.format
-        ? formData.NgayKetThuc.format('DD/MM/YYYY')
-        : formData.NgayKetThuc,
-      NgayTinhTien: formData.NgayTinhTien && formData.NgayTinhTien.format
-        ? formData.NgayTinhTien.format('DD/MM/YYYY')
-        : formData.NgayTinhTien,
-      TrangThai: 'Còn hạn' // Mặc định trạng thái là 'Còn hạn' khi thêm hoặc sửa
-    };
+      // Chuẩn bị dữ liệu để gửi đến backend
+      const hopDongData = {
+        MaHopDong: formData.MaHopDong,
+        MaPhongId: formData.MaPhongId, // Gửi MaPhongId thay vì phong_id
+        MaNhaId: formData.MaNhaId, // Gửi MaNhaId
+        TenNha: selectedToaNha ? selectedToaNha.TenNha : '',
+        TenPhong: selectedPhong ? selectedPhong.TenPhong : '',
+        NgayBatDau: formData.NgayBatDau && formData.NgayBatDau.format
+          ? formData.NgayBatDau.format('DD/MM/YYYY')
+          : formData.NgayBatDau,
+        NgayKetThuc: formData.NgayKetThuc && formData.NgayKetThuc.format
+          ? formData.NgayKetThuc.format('DD/MM/YYYY')
+          : formData.NgayKetThuc,
+        NgayTinhTien: formData.NgayTinhTien && formData.NgayTinhTien.format
+          ? formData.NgayTinhTien.format('DD/MM/YYYY')
+          : formData.NgayTinhTien,
+        TienThue: formData.TienThue,
+        TienCoc: formData.TienCoc,
+        ChuKyThanhToan: formData.ChuKyThanhToan,
+        TrangThai: 'Còn hạn', // Mặc định trạng thái là 'Còn hạn' khi thêm hoặc sửa
+        khach_hang_ids: khachHangDuocChon.map(kh => kh.id || kh.MaKhachHang), // Gửi dưới dạng khach_hang_ids để backend xử lý đúng
+        dich_vu_ids: dichVuDuocChon.map(dv => dv.id || dv.MaDichVu),
+        ma_cong_to: dichVuDuocChon.map(dv => dv.MaCongTo || ''),
+        chi_so_dau: dichVuDuocChon.map(dv => dv.ChiSoDau || ''),
+        ngay_tinh_phi: dichVuDuocChon.map(dv => dv.NgayTinhPhi || '') // Gửi dưới dạng snake_case để backend xử lý đúng
+      };
 
-    if (editId === null) {
-      // Kiểm tra trùng mã hợp đồng khi thêm mới
-      const isDuplicate = rows.some(r => r.MaHopDong === newData.MaHopDong);
-      if (isDuplicate) {
-        setErrors(prev => ({
-          ...prev,
-          MaHopDong: 'Mã khách hàng đã tồn tại'
-        }));
-        return;
+      console.log('Dữ liệu gửi đến backend:', hopDongData);
+
+      let response;
+      if (editId === null) {
+        // Kiểm tra trùng mã hợp đồng khi thêm mới
+        const isDuplicate = rows.some(r => r.MaHopDong === hopDongData.MaHopDong);
+        if (isDuplicate) {
+          setErrors(prev => ({
+            ...prev,
+            MaHopDong: 'Mã hợp đồng đã tồn tại'
+          }));
+          setLoading(false);
+          return;
+        }
+
+        // Gọi API để thêm mới hợp đồng
+        response = await hopDongService.create(hopDongData);
+        console.log('Kết quả thêm mới hợp đồng:', response);
+        
+        setSnackbar({
+          open: true,
+          message: 'Thêm hợp đồng thành công',
+          severity: 'success'
+        });
+      } else {
+        // Gọi API để cập nhật hợp đồng
+        response = await hopDongService.update(editId, hopDongData);
+        console.log('Kết quả cập nhật hợp đồng:', response);
+        
+        setSnackbar({
+          open: true,
+          message: 'Cập nhật hợp đồng thành công',
+          severity: 'success'
+        });
       }
 
-      // Thêm mới
-      setRows(prev => [...prev, newData]);
-    } else {
-      // Sửa thông tin khách hàng
-      setRows(prev => {
-        return prev.map(row =>
-          row.MaHopDong === editId ? newData : row
-        );
+      // Tải lại danh sách hợp đồng sau khi thêm/sửa
+      await fetchHopDong();
+      
+      setOpen(false);
+      handleClose(); // Gọi handleClose để reset toàn bộ form và state
+    } catch (error) {
+      console.error('Lỗi khi lưu hợp đồng:', error);
+      setSnackbar({
+        open: true,
+        message: `Lỗi khi ${editId === null ? 'thêm' : 'cập nhật'} hợp đồng: ${error.message || 'Không xác định'}`,
+        severity: 'error'
       });
+    } finally {
+      setLoading(false);
     }
-
-    setOpen(false);
-    handleClose(); // Gọi handleClose để reset toàn bộ form và state
   };
 
   const confirmDeleteKhachHang = useConfirm()
@@ -996,19 +1166,19 @@ function HopDong() {
           <Button onClick={handleAddDichVu}>Chọn</Button>
         </DialogActions>
       </Dialog>
-
-      {/* Bảng */}
       <TableContainer component={Paper} sx={{ marginTop: '16px' }}>
         <Table sx={{ minWidth: 700 }} aria-label="Danh sách hợp đồng">
           <TableHead>
             <TableRow>
               <StyledTableCell>Mã HĐ</StyledTableCell>
               <StyledTableCell>Đại diện</StyledTableCell>
+              <StyledTableCell>Phòng</StyledTableCell>
               <StyledTableCell>Giá thuê</StyledTableCell>
+              <StyledTableCell>Tiền cọc</StyledTableCell>
               <StyledTableCell>Ngày bắt đầu</StyledTableCell>
               <StyledTableCell>Ngày kết thúc</StyledTableCell>
               <StyledTableCell>Trạng thái</StyledTableCell>
-              <StyledTableCell align='center'>Tháo tác</StyledTableCell>
+              <StyledTableCell align='center'>Thao tác</StyledTableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -1017,10 +1187,16 @@ function HopDong() {
                 <StyledTableCell sx={{ p: '8px' }}>{row.MaHopDong}</StyledTableCell>
                 <StyledTableCell sx={{ p: '8px' }}>
                   <Box>{row.KhachHangs && row.KhachHangs.length > 0 ? row.KhachHangs[0].HoTen : 'Không có'}</Box>
+                  {row.KhachHangs && row.KhachHangs.length > 1 && (
+                    <Box sx={{ color: '#B9B9C3' }}>+{row.KhachHangs.length - 1} người khác</Box>
+                  )}
+                </StyledTableCell>
+                <StyledTableCell sx={{ p: '8px' }}>
+                  <Box>Phòng: {row.TenPhong || 'Không có'}</Box>
                   <Box sx={{ color: '#B9B9C3' }}>Tòa nhà: {row.TenNha || 'Không có'}</Box>
-                  <Box sx={{ color: '#B9B9C3' }}>{row.TenPhong || 'Không có'}</Box>
                 </StyledTableCell>
                 <StyledTableCell sx={{ p: '8px' }}>{formatCurrency(row.TienThue)}</StyledTableCell>
+                <StyledTableCell sx={{ p: '8px' }}>{formatCurrency(row.TienCoc)}</StyledTableCell>
                 <StyledTableCell sx={{ p: '8px' }}>{row.NgayBatDau}</StyledTableCell>
                 <StyledTableCell sx={{ p: '8px' }}>{row.NgayKetThuc}</StyledTableCell>
                 <StyledTableCell sx={{ p: '8px' }}>
