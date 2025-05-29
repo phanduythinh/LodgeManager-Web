@@ -14,30 +14,34 @@ class PhongRequest extends FormRequest
     public function rules()
     {
         return [
-            'ten' => 'required|string|max:255',
-            'toa_nha_id' => 'required|exists:toa_nha,id',
-            'loai_phong' => 'required|string|max:50',
-            'dien_tich' => 'required|numeric|min:0',
-            'gia_thue' => 'required|numeric|min:0',
-            'trang_thai' => 'required|in:trong,da_thue,bao_tri',
-            'mo_ta' => 'nullable|string',
-            'tien_ich' => 'nullable|array'
+            'MaPhong' => 'required|string|max:50',
+            'TenNha' => 'required|string|max:255',
+            'TenPhong' => 'required|string|max:255',
+            'Tang' => 'required|string|max:50',
+            'GiaThue' => 'required|numeric|min:0',
+            'DatCoc' => 'required|numeric|min:0',
+            'DienTich' => 'required|numeric|min:0',
+            'SoKhachToiDa' => 'required|numeric|min:1',
+            'TrangThai' => 'required|string|max:50'
         ];
     }
 
     public function messages()
     {
         return [
-            'ten.required' => 'Tên phòng là bắt buộc',
-            'toa_nha_id.required' => 'Tòa nhà là bắt buộc',
-            'toa_nha_id.exists' => 'Tòa nhà không tồn tại',
-            'loai_phong.required' => 'Loại phòng là bắt buộc',
-            'dien_tich.required' => 'Diện tích là bắt buộc',
-            'dien_tich.min' => 'Diện tích phải lớn hơn 0',
-            'gia_thue.required' => 'Giá thuê là bắt buộc',
-            'gia_thue.min' => 'Giá thuê phải lớn hơn 0',
-            'trang_thai.required' => 'Trạng thái là bắt buộc',
-            'trang_thai.in' => 'Trạng thái không hợp lệ'
+            'MaPhong.required' => 'Mã phòng là bắt buộc',
+            'TenNha.required' => 'Tên nhà là bắt buộc',
+            'TenPhong.required' => 'Tên phòng là bắt buộc',
+            'Tang.required' => 'Tầng là bắt buộc',
+            'GiaThue.required' => 'Giá thuê là bắt buộc',
+            'GiaThue.min' => 'Giá thuê phải lớn hơn 0',
+            'DatCoc.required' => 'Đặt cọc là bắt buộc',
+            'DatCoc.min' => 'Đặt cọc phải lớn hơn 0',
+            'DienTich.required' => 'Diện tích là bắt buộc',
+            'DienTich.min' => 'Diện tích phải lớn hơn 0',
+            'SoKhachToiDa.required' => 'Số khách tối đa là bắt buộc',
+            'SoKhachToiDa.min' => 'Số khách tối đa phải lớn hơn 0',
+            'TrangThai.required' => 'Trạng thái là bắt buộc'
         ];
     }
 }

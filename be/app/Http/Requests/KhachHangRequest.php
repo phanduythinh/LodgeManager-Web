@@ -13,17 +13,21 @@ class KhachHangRequest extends FormRequest
 
     public function rules()
     {
+        // Lấy ID từ route nếu có
+        $id = $this->route('khach_hang');
+        
         return [
             'ho_ten' => 'required|string|max:255',
-            'email' => 'required|email|unique:khach_hang,email,' . $this->id,
+            'email' => 'nullable|email|unique:khach_hangs,email,' . $id,
             'so_dien_thoai' => 'required|string|max:20',
-            'cmnd_cccd' => 'required|string|max:20|unique:khach_hang,cmnd_cccd,' . $this->id,
-            'ngay_sinh' => 'required|date',
-            'gioi_tinh' => 'required|in:nam,nu,khac',
-            'dia_chi' => 'required|string|max:255',
-            'nghe_nghiep' => 'nullable|string|max:100',
-            'trang_thai' => 'required|in:hoat_dong,khong_hoat_dong',
-            'ghi_chu' => 'nullable|string'
+            'cccd' => 'nullable|string|max:20|unique:khach_hangs,cccd,' . $id,
+            'ngay_sinh' => 'nullable|date',
+            'gioi_tinh' => 'nullable|string',
+            'dia_chi_nha' => 'nullable|string|max:255',
+            'xa_phuong' => 'nullable|string|max:100',
+            'quan_huyen' => 'nullable|string|max:100',
+            'tinh_thanh' => 'nullable|string|max:100',
+            'ma_khach_hang' => 'nullable|string|max:50'
         ];
     }
 

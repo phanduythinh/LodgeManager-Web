@@ -14,29 +14,31 @@ class PhiDichVuRequest extends FormRequest
     public function rules()
     {
         return [
-            'ten' => 'required|string|max:255',
-            'mo_ta' => 'nullable|string',
-            'gia' => 'required|numeric|min:0',
-            'don_vi' => 'required|string|max:50',
-            'trang_thai' => 'required|in:active,inactive',
-            'loai_dich_vu' => 'required|string|max:50'
+            'MaDichVu' => 'required|string|max:50',
+            'TenDichVu' => 'required|string|max:255',
+            'LoaiDichVu' => 'required|string|max:50',
+            'DonGia' => 'required|numeric|min:0',
+            'DonViTinh' => 'required|string|max:50',
+            'TenNha' => 'required|string|max:255'
         ];
     }
 
     public function messages()
     {
         return [
-            'ten.required' => 'Tên dịch vụ không được để trống',
-            'ten.max' => 'Tên dịch vụ không được vượt quá 255 ký tự',
-            'gia.required' => 'Giá dịch vụ không được để trống',
-            'gia.numeric' => 'Giá dịch vụ phải là số',
-            'gia.min' => 'Giá dịch vụ không được âm',
-            'don_vi.required' => 'Đơn vị không được để trống',
-            'don_vi.max' => 'Đơn vị không được vượt quá 50 ký tự',
-            'trang_thai.required' => 'Trạng thái không được để trống',
-            'trang_thai.in' => 'Trạng thái không hợp lệ',
-            'loai_dich_vu.required' => 'Loại dịch vụ không được để trống',
-            'loai_dich_vu.max' => 'Loại dịch vụ không được vượt quá 50 ký tự'
+            'MaDichVu.required' => 'Mã dịch vụ không được để trống',
+            'MaDichVu.max' => 'Mã dịch vụ không được vượt quá 50 ký tự',
+            'TenDichVu.required' => 'Tên dịch vụ không được để trống',
+            'TenDichVu.max' => 'Tên dịch vụ không được vượt quá 255 ký tự',
+            'LoaiDichVu.required' => 'Loại dịch vụ không được để trống',
+            'LoaiDichVu.max' => 'Loại dịch vụ không được vượt quá 50 ký tự',
+            'DonGia.required' => 'Đơn giá không được để trống',
+            'DonGia.numeric' => 'Đơn giá phải là số',
+            'DonGia.min' => 'Đơn giá không được âm',
+            'DonViTinh.required' => 'Đơn vị tính không được để trống',
+            'DonViTinh.max' => 'Đơn vị tính không được vượt quá 50 ký tự',
+            'TenNha.required' => 'Tên nhà không được để trống',
+            'TenNha.max' => 'Tên nhà không được vượt quá 255 ký tự'
         ];
     }
 }

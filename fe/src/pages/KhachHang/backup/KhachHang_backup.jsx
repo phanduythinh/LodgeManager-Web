@@ -319,25 +319,17 @@ function KhachHang() {
   };
 
   const handleEdit = (id) => {
-    const customer = rows.find(row => row.MaKhachHang === id || row.id === id);
+    const customer = rows.find(row => row.MaKhachHang === id);
     if (customer) {
-      console.log('Dữ liệu khách hàng gốc khi chỉnh sửa:', customer);
-      
-      // Đảm bảo tất cả các trường có giá trị, giữ lại dữ liệu cũ khi cập nhật
+      // Đảm bảo tất cả các trường có giá trị
       const customerData = {
-        id: customer.id, // Đảm bảo có ID để cập nhật
-        MaKhachHang: customer.MaKhachHang || customer.ma_khach_hang || '',
-        HoTen: customer.HoTen || customer.ho_ten || '',
-        SoDienThoai: customer.SoDienThoai || customer.so_dien_thoai || '',
-        // Giữ lại email cũ khi cập nhật
-        Email: customer.Email || customer.email || '',
-        // Giữ lại CCCD cũ khi cập nhật
-        CCCD: customer.CCCD || customer.cccd || customer.CMND_CCCD || '',
-        DiaChiNha: customer.DiaChiNha || customer.dia_chi_nha || customer.DiaChi || '',
-        XaPhuong: customer.XaPhuong || customer.xa_phuong || '',
-        QuanHuyen: customer.QuanHuyen || customer.quan_huyen || '',
-        TinhThanh: customer.TinhThanh || customer.tinh_thanh || '',
-        GioiTinh: customer.GioiTinh || customer.gioi_tinh || 'Nam',
+        ...customer,
+        CCCD: customer.CCCD || customer.CMND_CCCD || '',
+        DiaChiNha: customer.DiaChiNha || customer.DiaChi || '',
+        XaPhuong: customer.XaPhuong || '',
+        QuanHuyen: customer.QuanHuyen || '',
+        TinhThanh: customer.TinhThanh || '',
+        GioiTinh: customer.GioiTinh || 'Nam',
       };
       
       // Chuyển đổi định dạng ngày tháng nếu cần
@@ -345,7 +337,7 @@ function KhachHang() {
         (typeof customer.NgaySinh === 'string' ? 
           dayjs(customer.NgaySinh) : 
           dayjs(customer.NgaySinh)) : 
-        customer.ngay_sinh ? dayjs(customer.ngay_sinh) : null;
+        null;
         
       setFormData({
         ...customerData,
@@ -353,26 +345,11 @@ function KhachHang() {
       });
       
       // Lưu cả ID số và mã khách hàng để sử dụng khi cập nhật
+      // Đảm bảo rằng chúng ta có một ID hợp lệ
       setEditId(customer.id || customer.MaKhachHang);
       setOpen(true);
       
-      // Cập nhật các dropdown địa chỉ
-      if (customer.TinhThanh || customer.tinh_thanh) {
-        const province = provinces.find(p => p.name === (customer.TinhThanh || customer.tinh_thanh));
-        if (province) {
-          const dsDistricts = getDistrictsByProvinceCode(province.code);
-          setDistricts(dsDistricts);
-          
-          if (customer.QuanHuyen || customer.quan_huyen) {
-            const district = dsDistricts.find(d => d.name === (customer.QuanHuyen || customer.quan_huyen));
-            if (district) {
-              setWards(getWardsByDistrictCode(district.code));
-            }
-          }
-        }
-      }
-      
-      console.log('Dữ liệu khách hàng đã xử lý khi chỉnh sửa:', customerData);
+      console.log('Đang chỉnh sửa khách hàng:', customerData);
       console.log('ID khách hàng để cập nhật:', customer.id || customer.MaKhachHang);
     }
   };
@@ -666,8 +643,33 @@ function KhachHang() {
           <Button onClick={handleClose}>Hủy</Button>
           <Button onClick={handleSubmit} variant="contained">Lưu</Button>
         </DialogActions>
-      </Dialog>
-
+                <StyledTableCell sx={{ p: '8px' }}>
+                  <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+                    <Tooltip title="Sửa">
+                      <Button
+                        variant="contained"
+                        sx={{ bgcolor: '#828688' }}
+                        onClick={() => handleOpenEdit(row)}
+                      >
+                        <BorderColorIcon fontSize='small' />
+                      </Button>
+                    </Tooltip>
+                    <Tooltip title="Xóa">
+                      <Button
+                        variant="contained"
+                        sx={{ bgcolor: '#EA5455' }}
+                        onClick={() => hanhdleDeleteKhachHang(row)}
+                      >
+                        <DeleteIcon fontSize='small' />
+                      </Button>
+                    </Tooltip>
+                  </Box>
+                </StyledTableCell>
+              </StyledTableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
       <TableContainer component={Paper} sx={{ marginTop: '16px' }}>
         <Table sx={{ minWidth: 700 }} aria-label="customized table">
           <TableHead>
@@ -683,12 +685,12 @@ function KhachHang() {
           </TableHead>
           <TableBody>
             {filteredRows.map((row) => (
-              <StyledTableRow key={row.MaKhachHang || row.id}>
+              <StyledTableRow key={row.MaKhachHang}>
                 <StyledTableCell sx={{ p: '8px' }}>{row.MaKhachHang}</StyledTableCell>
                 <StyledTableCell sx={{ p: '8px' }}>{row.HoTen}</StyledTableCell>
                 <StyledTableCell sx={{ p: '8px' }}>{row.SoDienThoai}</StyledTableCell>
                 <StyledTableCell sx={{ p: '8px' }}>{row.NgaySinh}</StyledTableCell>
-                <StyledTableCell sx={{ p: '8px' }}>{row.CCCD || row.cccd || row.CMND_CCCD || ''}</StyledTableCell>
+                <StyledTableCell sx={{ p: '8px' }}>{row.CCCD || row.cccd || ''}</StyledTableCell>
                 <StyledTableCell sx={{ p: '8px' }}>
                   {[row.DiaChiNha || row.dia_chi_nha, row.XaPhuong || row.xa_phuong, row.QuanHuyen || row.quan_huyen, row.TinhThanh || row.tinh_thanh]
                     .filter(Boolean).join(', ')}
@@ -699,7 +701,7 @@ function KhachHang() {
                       <Button
                         variant="contained"
                         sx={{ bgcolor: '#828688' }}
-                        onClick={() => handleEdit(row.id || row.MaKhachHang)}
+                        onClick={() => handleOpenEdit(row)}
                       >
                         <BorderColorIcon fontSize='small' />
                       </Button>

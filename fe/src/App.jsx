@@ -6,6 +6,9 @@ import HopDong from '~/pages/KhachHang/HopDong'
 import KhachHang from './pages/KhachHang/KhachHang'
 import ApiTest from './components/ApiTest'
 import ApiTester from './components/ApiTester'
+import ConnectionTest from './components/ConnectionTest'
+import ApiConnectionTest from './components/ApiConnectionTest'
+import ApiTestSimple from './components/ApiTestSimple'
 // import Login from './pages/Login'
 
 import PropTypes from 'prop-types'
@@ -33,13 +36,13 @@ const NAVIGATION = [
   //   icon: <LoginIcon />
   // },
   {
-    segment: 'ApiTest',
-    title: 'Kiểm tra API',
+    segment: 'ApiConnectionTest',
+    title: 'Kiểm tra kết nối API tổng thể',
     icon: <ApiIcon />
   },
   {
-    segment: 'ApiTester',
-    title: 'Kiểm tra API Tòa Nhà',
+    segment: 'ApiTest',
+    title: 'Kiểm tra API',
     icon: <ApiIcon />
   },
   {
@@ -117,11 +120,20 @@ function DemoPageContent({ pathname }) {
     // case '/Login':
     //   content = <Login />
     //   break
+    case '/ConnectionTest':
+      content = <ConnectionTest />
+      break
+    case '/ApiConnectionTest':
+      content = <ApiConnectionTest />
+      break
     case '/ApiTest':
       content = <ApiTest />
       break
     case '/ApiTester':
       content = <ApiTester />
+      break
+    case '/ApiTestSimple':
+      content = <ApiTestSimple />
       break
     case '/DanhMucDuLieu/ToaNha':
       content = <ToaNha />

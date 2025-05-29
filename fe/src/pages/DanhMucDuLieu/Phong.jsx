@@ -1,10 +1,8 @@
-import { useState, useEffect } from 'react'
-import { StyledTableCell, StyledTableRow } from '~/components/StyledTable'
+import React, { useState, useEffect } from 'react'
+import { phongService, toaNhaService } from '~/apis/services'
 import {
-  Table, TableBody, TableContainer,
-  TableHead, TableRow, Paper, Button, Box, TextField, Dialog, DialogActions,
-  DialogContent, DialogTitle, Grid,
-  CircularProgress
+  Table, TableBody, TableContainer, TableHead, TableRow, Paper, Button, Box, TextField, Dialog, DialogActions,
+  DialogContent, DialogTitle, Grid, CircularProgress, Typography
 } from '@mui/material'
 import Autocomplete from '@mui/material/Autocomplete'
 import AddIcon from '@mui/icons-material/Add'
@@ -13,13 +11,14 @@ import Tooltip from '@mui/material/Tooltip'
 import DeleteIcon from '@mui/icons-material/Delete'
 import BorderColorIcon from '@mui/icons-material/BorderColor'
 import SearchIcon from '@mui/icons-material/Search'
-// import { ToaNhaData } from '~/apis/mock-data'
-import { phongService, toaNhaService } from "~/apis/services"
 import { useConfirm } from 'material-ui-confirm'
+import { StyledTableCell, StyledTableRow } from '~/components/StyledTable'
 import { formatCurrency } from '~/components/formatCurrency'
 
 function Phong() {
-  const [rows, setRows] = useState([])
+  const [rooms, setRooms] = useState([])
+  const [buildings, setBuildings] = useState([])
+  const [loading, setLoading] = useState(true)
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
@@ -47,86 +46,42 @@ function Phong() {
     severity: 'success'
   })
 
-  const handleCloseSnackbar = () => {
-    setSnackbar(prev => ({ ...prev, open: false }))
-  }
-
-  const fetchData = async () => {
-    try {
-      setLoading(true)
-      const res = await phongService.getAll()
-      setRows(res.data)
-    } catch (error) {
-      console.error('Lỗi khi lấy danh sách phòng:', error)
-      let errorMessage = 'Không thể tải danh sách phòng.'
-      if (error.response && error.response.data && error.response.data.message) {
-        errorMessage = error.response.data.message
-      }
-      setSnackbar({
-        open: true,
-        message: errorMessage,
-        severity: 'error'
-      })
-    } finally {
-      setLoading(false)
-    }
-  }
 
   useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true)
+        // Lấy danh sách tòa nhà
+        const buildingsResponse = await toaNhaService.getAll()
+        const buildingsData = Array.isArray(buildingsResponse) ? buildingsResponse : 
+                          (buildingsResponse && buildingsResponse.data) ? buildingsResponse.data : []
+        setBuildings(buildingsData)
+
+        // Lấy danh sách phòng
+        const response = await phongService.getAll()
+        console.log('API response:', response)
+        
+        // Xử lý dữ liệu
+        let data = []
+        if (Array.isArray(response)) {
+          data = response
+        } else if (response && Array.isArray(response.data)) {
+          data = response.data
+        }
+        
+        setRooms(data)
+      } catch (error) {
+        console.error('Lỗi khi lấy danh sách phòng:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    
     fetchData()
   }, [])
 
-  // Fetch danh sách tòa nhà khi dialog mở
-  useEffect(() => {
-    const fetchToaNha = async () => {
-      try {
-        const res = await toaNhaService.getAll()
-        const data = res.data || []
-        const options = data.map(item => ({ title: item.TenNha }))
-        setListToaNha(options)
-      } catch (err) {
-        console.error('Lỗi khi lấy danh sách tòa nhà:', err)
-        let errorMessage = 'Không thể tải danh sách tòa nhà cho Autocomplete.'
-        if (err.response && err.response.data && err.response.data.message) {
-          errorMessage = err.response.data.message
-        }
-        setSnackbar({
-          open: true,
-          message: errorMessage,
-          severity: 'error'
-        })
-      }
-    }
-
-    if (open) {
-      fetchToaNha()
-    }
-  }, [open])
-
-  const handleDelete = async (MaPhong) => {
-    try {
-      setLoading(true)
-      await phongService.delete(MaPhong)
-      await fetchData() // Gọi lại fetchData để cập nhật danh sách
-      setSnackbar({
-        open: true,
-        message: 'Xóa phòng thành công',
-        severity: 'success'
-      })
-    } catch (error) {
-      console.error('Lỗi khi xóa phòng:', error)
-      let errorMessage = 'Có lỗi xảy ra khi xóa phòng.'
-      if (error.response && error.response.data && error.response.data.message) {
-        errorMessage = error.response.data.message
-      }
-      setSnackbar({
-        open: true,
-        message: errorMessage,
-        severity: 'error'
-      })
-    } finally {
-      setLoading(false)
-    }
+  const handleDelete = (MaPhong) => {
+    setRooms(rooms.filter(room => room.MaPhong !== MaPhong))
   }
 
   const handleOpenAdd = () => {
@@ -170,7 +125,6 @@ function Phong() {
     }
   }
 
-
   const validateForm = () => {
     const requiredFields = ['MaPhong', 'TenNha', 'TenPhong', 'Tang', 'GiaThue', 'DatCoc', 'DienTich', 'SoKhachToiDa', 'TrangThai']
     const newErrors = {}
@@ -185,89 +139,196 @@ function Phong() {
     return Object.keys(newErrors).length === 0
   }
 
-
   const handleSubmit = async () => {
     if (!validateForm()) return
 
     try {
       setLoading(true)
-      if (editId === null) {
-        // Tạo mới
-        await phongService.create(formData)
-        setSnackbar({
-          open: true,
-          message: 'Thêm phòng thành công',
-          severity: 'success'
-        })
+      
+      // Chuẩn bị dữ liệu trước khi gửi
+      // Đảm bảo các trường số được chuyển từ chuỗi sang số
+      const preparedData = {
+        ...formData,
+        GiaThue: formData.GiaThue ? Number(formData.GiaThue) : 0,
+        DatCoc: formData.DatCoc ? Number(formData.DatCoc) : 0,
+        DienTich: formData.DienTich ? Number(formData.DienTich) : 0,
+        SoKhachToiDa: formData.SoKhachToiDa ? Number(formData.SoKhachToiDa) : 0
+      }
+      
+      // Kiểm tra trùng mã phòng khi thêm mới
+      if (editIndex === null) {
+        const isDuplicate = rooms.some(r => r.MaPhong === preparedData.MaPhong);
+        if (isDuplicate) {
+          setErrors(prev => ({
+            ...prev,
+            MaPhong: 'Mã phòng đã tồn tại'
+          }));
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Xử lý thêm mới hoặc cập nhật
+      if (editIndex === null) {
+        // Thêm mới
+        try {
+          // Gọi API
+          const response = await phongService.create(preparedData);
+          console.log('Kết quả thêm phòng:', response);
+          
+          // Lấy lại danh sách phòng
+          const updatedRoomsResponse = await phongService.getAll();
+          const updatedRooms = Array.isArray(updatedRoomsResponse) ? updatedRoomsResponse : 
+                             (updatedRoomsResponse && updatedRoomsResponse.data) ? updatedRoomsResponse.data : [];
+          
+          setRooms(updatedRooms);
+          setOpen(false);
+          alert('Thêm phòng thành công!');
+        } catch (apiError) {
+          console.error('Lỗi khi gọi API thêm phòng:', apiError);
+          
+          // Kiểm tra nếu là môi trường phát triển hoặc API không hoạt động
+          if (process.env.NODE_ENV === 'development') {
+            // Fallback: thêm trực tiếp vào state nếu API lỗi
+            setRooms(prev => [...prev, preparedData]);
+            setOpen(false);
+            alert('Thêm phòng thành công (chỉ lưu trên giao diện)!');
+          } else {
+            throw apiError; // Ném lỗi để xử lý ở catch bên ngoài
+          }
+        }
       } else {
-        // Sửa
-        await phongService.update(editId, formData)
-        setSnackbar({
-          open: true,
-          message: 'Cập nhật phòng thành công',
-          severity: 'success'
-        })
+        // Cập nhật
+        try {
+          // Gọi API
+          const response = await phongService.update(preparedData.MaPhong, preparedData);
+          console.log('Kết quả cập nhật phòng:', response);
+          
+          // Lấy lại danh sách phòng
+          const updatedRoomsResponse = await phongService.getAll();
+          const updatedRooms = Array.isArray(updatedRoomsResponse) ? updatedRoomsResponse : 
+                             (updatedRoomsResponse && updatedRoomsResponse.data) ? updatedRoomsResponse.data : [];
+          
+          setRooms(updatedRooms);
+          setOpen(false);
+          alert('Cập nhật phòng thành công!');
+        } catch (apiError) {
+          console.error('Lỗi khi gọi API cập nhật phòng:', apiError);
+          
+          // Kiểm tra nếu là môi trường phát triển hoặc API không hoạt động
+          if (process.env.NODE_ENV === 'development') {
+            // Fallback: cập nhật trực tiếp vào state nếu API lỗi
+            const updatedRooms = [...rooms];
+            updatedRooms[editIndex] = preparedData;
+            setRooms(updatedRooms);
+            setOpen(false);
+            alert('Cập nhật phòng thành công (chỉ lưu trên giao diện)!');
+          } else {
+            throw apiError; // Ném lỗi để xử lý ở catch bên ngoài
+          }
+        }
       }
-      await fetchData() // Refresh danh sách
-      setOpen(false)
     } catch (error) {
-      console.error('Lỗi khi lưu phòng:', error)
-      let errorMessage = 'Có lỗi xảy ra khi lưu phòng.'
-      if (error.response && error.response.data && error.response.data.message) {
-        errorMessage = error.response.data.message
+      console.error('Lỗi khi lưu phòng:', error);
+      // Hiển thị thông tin lỗi chi tiết hơn
+      let errorMessage = 'Có lỗi xảy ra khi lưu phòng. ';
+      
+      if (error.response) {
+        // Lỗi từ server với mã trạng thái
+        errorMessage += `Mã lỗi: ${error.response.status}. `;
+        if (error.response.data && error.response.data.message) {
+          errorMessage += error.response.data.message;
+        }
+      } else if (error.request) {
+        // Lỗi không nhận được phản hồi từ server
+        errorMessage += 'Không thể kết nối đến server. Kiểm tra kết nối mạng của bạn.';
+      } else {
+        // Lỗi khác
+        errorMessage += error.message || 'Lỗi không xác định.';
       }
-      setSnackbar({
-        open: true,
-        message: errorMessage,
-        severity: 'error'
-      })
+      
+      alert(errorMessage);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
   const hanhdleDeletePhong = (row) => {
     confirm({
       title: 'Xóa phòng',
-      description: `Bạn chắc chắn muốn xóa phòng ${row.MaPhong}?`,
+      description: `Bạn chắc chắn muốn xóa phòng ${row.TenPhong}?`,
       confirmationText: 'Xóa',
-      cancellationText: 'Hủy'
-    }).then(() => {
-      handleDelete(row.MaPhong)
+      cancellationText: 'Hủy',
+      confirmationButtonProps: { variant: 'contained', color: 'error' },
+      cancellationButtonProps: { variant: 'outlined' }
+    }).then(async () => {
+      try {
+        setLoading(true)
+        await phongService.delete(row.MaPhong)
+        handleDelete(row.MaPhong)
+      } catch (error) {
+        console.error('Lỗi khi xóa phòng:', error)
+      } finally {
+        setLoading(false)
+      }
     }).catch(() => { })
   }
 
   // Filter rows theo filterToaNha, filterTang, filterTrangThai và searchText
-  const filteredRows = rows.filter(row => {
-    if (filterToaNha && row.TenNha !== filterToaNha) return false
-    if (filterTang && row.Tang !== filterTang) return false
-    if (filterTrangThai && row.TrangThai !== filterTrangThai) return false
+  const filteredRooms = rooms.filter(room => {
+    if (filterToaNha && room.TenNha !== filterToaNha) return false
+    if (filterTang && room.Tang !== filterTang) return false
+    if (filterTrangThai && room.TrangThai !== filterTrangThai) return false
     if (searchText.trim() !== '') {
       const text = searchText.toLowerCase()
       if (!(
-        row.MaPhong.toLowerCase().includes(text) ||
-        row.TenPhong.toLowerCase().includes(text) ||
-        row.TenNha.toLowerCase().includes(text)
+        (room.MaPhong && room.MaPhong.toLowerCase().includes(text)) ||
+        (room.TenPhong && room.TenPhong.toLowerCase().includes(text)) ||
+        (room.TenNha && room.TenNha.toLowerCase().includes(text))
       )) return false
     }
     return true
   })
 
-  const listTrangThai = [{ title: 'Đang ở' }, { title: 'Còn trống' }]
-  const listTang = [
-    { title: 'Tầng 1' },
-    { title: 'Tầng 2' },
-    { title: 'Tầng 3' },
-    { title: 'Tầng 4' },
-    { title: 'Tầng 5' },
-    { title: 'Tầng 6' },
-    { title: 'Tầng 7' },
-    { title: 'Tầng 8' },
-    { title: 'Tầng 9' },
-    { title: 'Tầng 10' }
-  ]
+  // const listTrangThai = [{ title: 'Đang ở' }, { title: 'Còn trống' }]
+  // const listTang = [
+  //   { title: 'Tầng 1' },
+  //   { title: 'Tầng 2' },
+  //   { title: 'Tầng 3' },
+  //   { title: 'Tầng 4' },
+  //   { title: 'Tầng 5' },
+  //   { title: 'Tầng 6' },
+  //   { title: 'Tầng 7' },
+  //   { title: 'Tầng 8' },
+  //   { title: 'Tầng 9' },
+  //   { title: 'Tầng 10' }
+  // ]
   // const listToaNha = [...new Set(toaNhaService.map(p => p.TenNha))].map(nha => ({ title: nha }))
+  // Lấy danh sách trạng thái từ rooms
+  const getStatuses = () => {
+    const statuses = [...new Set(rooms.map(room => room.TrangThai))]
+    return statuses.map(status => ({ title: status }))
+  }
 
+  // Lấy danh sách tầng từ rooms
+  const getFloors = () => {
+    const floors = [...new Set(rooms.map(room => room.Tang))]
+    return floors.map(floor => ({ title: floor }))
+  }
+
+  // Lấy danh sách tòa nhà
+  const getBuildingNames = () => {
+    return buildings.map(building => ({ title: building.TenNha }))
+  }
+  
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+        <CircularProgress />
+      </Box>
+    )
+  }
+  
   return (
     <Box sx={{ m: 1 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -284,7 +345,7 @@ function Phong() {
 
       <Box sx={{ display: 'flex', gap: 2, mt: 1 }}>
         <Autocomplete
-          options={listToaNha}
+          options={getBuildingNames()}
           getOptionLabel={(option) => option.title}
           onChange={(e, value) => setFilterToaNha(value?.title || null)}
           sx={{
@@ -301,7 +362,7 @@ function Phong() {
           clearOnEscape
         />
         <Autocomplete
-          options={listTang}
+          options={getFloors()}
           getOptionLabel={(option) => option.title}
           onChange={(e, value) => setFilterTang(value?.title || null)}
           sx={{
@@ -318,7 +379,7 @@ function Phong() {
           clearOnEscape
         />
         <Autocomplete
-          options={listTrangThai}
+          options={getStatuses()}
           getOptionLabel={(option) => option.title}
           onChange={(e, value) => setFilterTrangThai(value?.title || null)}
           sx={{
@@ -377,9 +438,9 @@ function Phong() {
               <Grid item xs={4} sx={{ width: 'calc(520px/3)' }}>
                 <Autocomplete
                   disablePortal
-                  options={listToaNha}
+                  options={getBuildingNames()}
                   getOptionLabel={(option) => option.title}
-                  value={listToaNha.find(t => t.title === formData.TenNha) || null}
+                  value={getBuildingNames().find(t => t.title === formData.TenNha) || null}
                   onChange={(e, value) => handleAutoChange('TenNha', value?.title || '')}
                   renderInput={(params) => (
                     <TextField
@@ -405,9 +466,9 @@ function Phong() {
               <Grid item xs={4} sx={{ width: 'calc(520px/3)' }}>
                 <Autocomplete
                   disablePortal
-                  options={listTang}
+                  options={getFloors()}
                   getOptionLabel={(option) => option.title}
-                  value={listTang.find(t => t.title === formData.Tang) || null}
+                  value={getFloors().find(t => t.title === formData.Tang) || null}
                   onChange={(e, value) => handleAutoChange('Tang', value?.title || '')}
                   renderInput={(params) => (
                     <TextField
@@ -422,7 +483,6 @@ function Phong() {
             </Grid>
 
             <Grid container spacing={2} sx={{ gap: 1 }}>
-
               <Grid item xs={4} sx={{ width: 'calc(520px/3)' }}>
                 <TextField
                   label="Giá thuê (*)"
@@ -445,51 +505,51 @@ function Phong() {
                   helperText={errors.DatCoc}
                 />
               </Grid>
-              <Grid container spacing={2} sx={{ width: 'calc(520px/3)' }}>
-                <Grid item xs={4}>
-                  <TextField
-                    label="Diện tích (m²) (*)"
-                    fullWidth
-                    name="DienTich"
-                    value={formData.DienTich}
-                    onChange={handleChange}
-                    error={!!errors.DienTich}
-                    helperText={errors.DienTich}
-                  />
-                </Grid>
+              <Grid item xs={4} sx={{ width: 'calc(520px/3)' }}>
+                <TextField
+                  label="Diện tích (m²) (*)"
+                  fullWidth
+                  name="DienTich"
+                  value={formData.DienTich}
+                  onChange={handleChange}
+                  error={!!errors.DienTich}
+                  helperText={errors.DienTich}
+                />
               </Grid>
-              <Grid item xs={4} >
-              </Grid>
-              <TextField
-                label="Số khách tối đa (*)"
-                fullWidth
-                name="SoKhachToiDa"
-                value={formData.SoKhachToiDa}
-                onChange={handleChange}
-                error={!!errors.SoKhachToiDa}
-                helperText={errors.SoKhachToiDa}
-              />
             </Grid>
-            <Grid item xs={4}>
-              <Autocomplete
-                disablePortal
-                options={listTrangThai}
-                getOptionLabel={(option) => option.title}
-                value={listTrangThai.find(t => t.title === formData.TrangThai) || null}
-                onChange={(e, value) => handleAutoChange('TrangThai', value?.title || '')}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Trạng thái thuê (*)"
-                    error={!!errors.TrangThai}
-                    helperText={errors.TrangThai}
-                  />
-                )}
-              />
+
+            <Grid container spacing={2} sx={{ gap: 1 }}>
+              <Grid item xs={4} sx={{ width: 'calc(520px/3)' }}>
+                <TextField
+                  label="Số khách tối đa (*)"
+                  fullWidth
+                  name="SoKhachToiDa"
+                  value={formData.SoKhachToiDa}
+                  onChange={handleChange}
+                  error={!!errors.SoKhachToiDa}
+                  helperText={errors.SoKhachToiDa}
+                />
+              </Grid>
+              <Grid item xs={4} sx={{ width: 'calc(520px/3)' }}>
+                <Autocomplete
+                  disablePortal
+                  options={getStatuses()}
+                  getOptionLabel={(option) => option.title}
+                  value={getStatuses().find(t => t.title === formData.TrangThai) || null}
+                  onChange={(e, value) => handleAutoChange('TrangThai', value?.title || '')}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Trạng thái thuê (*)"
+                      error={!!errors.TrangThai}
+                      helperText={errors.TrangThai}
+                    />
+                  )}
+                />
+              </Grid>
             </Grid>
           </Box>
         </DialogContent>
-
 
         <DialogActions>
           <Button onClick={handleClose} disabled={loading}>Hủy</Button>
@@ -497,94 +557,85 @@ function Phong() {
             {loading ? <CircularProgress size={24} /> : 'Lưu'}
           </Button>
         </DialogActions>
-      </Dialog >
-
-      {loading && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
-          <CircularProgress />
-        </Box>
-      )}
-
-      {!loading && (
-        <TableContainer component={Paper} sx={{ marginTop: '16px' }}>
-          <Table sx={{ minWidth: 700 }} aria-label="customized table">
-            <TableHead>
+      </Dialog>
+      <TableContainer component={Paper} sx={{ marginTop: '16px' }}>
+        <Table sx={{ minWidth: 700 }} aria-label="customized table">
+          <TableHead>
+            <TableRow>
+              <StyledTableCell>Mã phòng</StyledTableCell>
+              <StyledTableCell>Tên phòng</StyledTableCell>
+              <StyledTableCell align='right'>Giá thuê</StyledTableCell>
+              <StyledTableCell align='right'>Đặt cọc</StyledTableCell>
+              <StyledTableCell align='right'>Diện tích</StyledTableCell>
+              <StyledTableCell align='right'>Số khách</StyledTableCell>
+              <StyledTableCell align='center'>Trạng thái</StyledTableCell>
+              <StyledTableCell align='center'>Thao tác</StyledTableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {filteredRooms.length === 0 ? (
               <TableRow>
-                <StyledTableCell>Mã phòng</StyledTableCell>
-                <StyledTableCell>Tên phòng</StyledTableCell>
-                <StyledTableCell align='right'>Giá thuê</StyledTableCell>
-                <StyledTableCell align='right'>Đặt cọc</StyledTableCell>
-                <StyledTableCell align='right'>Diện tích</StyledTableCell>
-                <StyledTableCell align='right'>Số khách</StyledTableCell>
-                <StyledTableCell align='center'>Trạng thái</StyledTableCell>
-                <StyledTableCell align='center'>Tháo tác</StyledTableCell>
+                <StyledTableCell colSpan={8} align="center">Không có dữ liệu</StyledTableCell>
               </TableRow>
-            </TableHead>
-            <TableBody>
-              {filteredRows.length === 0 ? (
-                <TableRow>
-                  <StyledTableCell colSpan={6} align="center">Không có dữ liệu</StyledTableCell>
-                </TableRow>
-              ) : (
-                filteredRows.map((row, index) => (
-                  <StyledTableRow key={row.MaPhong}>
-                    <StyledTableCell sx={{ p: '8px' }}>{row.MaPhong}</StyledTableCell>
-                    <StyledTableCell sx={{ p: '8px' }}>
-                      <Box>{row.TenPhong}</Box>
-                      <Box sx={{ color: '#B9B9C3' }}>Tòa nhà: {row.TenNha}</Box>
-                      <Box sx={{ color: '#B9B9C3' }}>{row.Tang}</Box>
-                    </StyledTableCell>
-                    <StyledTableCell align='right' sx={{ p: '8px' }}>{formatCurrency(row.GiaThue)}</StyledTableCell>
-                    <StyledTableCell align='right' sx={{ p: '8px' }}>{formatCurrency(row.DatCoc)}</StyledTableCell>
-                    <StyledTableCell align='right' sx={{ p: '8px' }}>{row.DienTich} m²</StyledTableCell>
-                    <StyledTableCell align='right' sx={{ p: '8px' }}>{row.SoKhachToiDa}</StyledTableCell>
-                    <StyledTableCell align='center' sx={{ p: '8px' }}>
-                      <span
-                        style={{
-                          padding: '4px 8px',
-                          borderRadius: '12px',
-                          color: row.TrangThai === 'Đang ở' ? '#388e3c' : '#EA5455',
-                          backgroundColor: row.TrangThai === 'Đang ở' ? '#c8e6c9' : '#EA54551F',
-                          fontWeight: 600,
-                          fontSize: '13px',
-                          display: 'inline-block',
-                          textAlign: 'center',
-                          minWidth: '80px'
-                        }}
-                      >
-                        {row.TrangThai}
-                      </span>
-                    </StyledTableCell>
-                    <StyledTableCell sx={{ p: '8px' }}>
-                      <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
-                        <Tooltip title="Sửa">
-                          <Button
-                            variant="contained"
-                            sx={{ bgcolor: '#828688' }}
-                            onClick={() => handleOpenEdit(row, index)}
-                          >
-                            <BorderColorIcon fontSize='small' />
-                          </Button>
-                        </Tooltip>
-                        <Tooltip title="Xóa">
-                          <Button
-                            variant="contained"
-                            sx={{ bgcolor: '#EA5455' }}
-                            onClick={() => hanhdleDeletePhong(row)}
-                          >
-                            <DeleteIcon fontSize='small' />
-                          </Button>
-                        </Tooltip>
-                      </Box>
-                    </StyledTableCell>
-                  </StyledTableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      )}
-    </Box >
+            ) : (
+              filteredRooms.map((room, index) => (
+                <StyledTableRow key={room.MaPhong}>
+                  <StyledTableCell sx={{ p: '8px' }}>{room.MaPhong}</StyledTableCell>
+                  <StyledTableCell sx={{ p: '8px' }}>
+                    <Box>{room.TenPhong}</Box>
+                    <Box sx={{ color: '#B9B9C3' }}>Tòa nhà: {room.TenNha}</Box>
+                    <Box sx={{ color: '#B9B9C3' }}>{room.Tang}</Box>
+                  </StyledTableCell>
+                  <StyledTableCell align='right' sx={{ p: '8px' }}>{formatCurrency(room.GiaThue)}</StyledTableCell>
+                  <StyledTableCell align='right' sx={{ p: '8px' }}>{formatCurrency(room.DatCoc)}</StyledTableCell>
+                  <StyledTableCell align='right' sx={{ p: '8px' }}>{room.DienTich} m²</StyledTableCell>
+                  <StyledTableCell align='right' sx={{ p: '8px' }}>{room.SoKhachToiDa}</StyledTableCell>
+                  <StyledTableCell align='center' sx={{ p: '8px' }}>
+                    <span
+                      style={{
+                        padding: '4px 8px',
+                        borderRadius: '12px',
+                        color: room.TrangThai === 'Đang ở' ? '#388e3c' : '#EA5455',
+                        backgroundColor: room.TrangThai === 'Đang ở' ? '#c8e6c9' : '#EA54551F',
+                        fontWeight: 600,
+                        fontSize: '13px',
+                        display: 'inline-block',
+                        textAlign: 'center',
+                        minWidth: '80px'
+                      }}
+                    >
+                      {room.TrangThai}
+                    </span>
+                  </StyledTableCell>
+                  <StyledTableCell sx={{ p: '8px' }}>
+                    <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+                      <Tooltip title="Sửa">
+                        <Button
+                          variant="contained"
+                          sx={{ bgcolor: '#828688' }}
+                          onClick={() => handleOpenEdit(room, index)}
+                        >
+                          <BorderColorIcon fontSize='small' />
+                        </Button>
+                      </Tooltip>
+                      <Tooltip title="Xóa">
+                        <Button
+                          variant="contained"
+                          sx={{ bgcolor: '#EA5455' }}
+                          onClick={() => hanhdleDeletePhong(room)}
+                        >
+                          <DeleteIcon fontSize='small' />
+                        </Button>
+                      </Tooltip>
+                    </Box>
+                  </StyledTableCell>
+                </StyledTableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </Box>
   )
 }
 
