@@ -22,11 +22,14 @@ class PhiDichVuController extends Controller
                     'id' => $phiDichVu->id,
                     'MaDichVu' => $phiDichVu->ma_dich_vu,
                     'TenDichVu' => $phiDichVu->ten_dich_vu,
-                    'LoaiDichVu' => $phiDichVu->loai_dich_vu,
-                    'DonGia' => $phiDichVu->don_gia,
-                    'DonViTinh' => $phiDichVu->don_vi_tinh,
+                    'LoaiDichVu' => $phiDichVu->loai_dich_vu ?? '',
+                    'DonGia' => $phiDichVu->don_gia ?? 0,
+                    'DonViTinh' => $phiDichVu->don_vi_tinh ?? '',
                     'MaNhaId' => $phiDichVu->toa_nha_id,
-                    'TenNha' => $phiDichVu->toaNha ? $phiDichVu->toaNha->ten_nha : ''
+                    'ToaNhaId' => $phiDichVu->toa_nha_id,
+                    'MaNha' => $phiDichVu->toaNha ? $phiDichVu->toaNha->ma_nha : '',
+                    'TenNha' => $phiDichVu->toaNha ? $phiDichVu->toaNha->ten_nha : '',
+                    'TrangThai' => $phiDichVu->trang_thai ?? 'Hoạt động'
                 ];
             });
             
@@ -44,8 +47,28 @@ class PhiDichVuController extends Controller
     {
         try {
             DB::beginTransaction();
-
-            $phiDichVu = PhiDichVu::create($request->validated());
+            
+            // Lấy ID của tòa nhà dựa trên TenNha
+            $toaNha = DB::table('toa_nhas')->where('ten_nha', $request->TenNha)->first();
+            
+            if (!$toaNha) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Không tìm thấy tòa nhà với tên: ' . $request->TenNha
+                ], 422);
+            }
+            
+            // Chuyển đổi dữ liệu từ frontend sang định dạng database
+            $phiDichVuData = [
+                'ma_dich_vu' => $request->MaDichVu,
+                'ten_dich_vu' => $request->TenDichVu,
+                'loai_dich_vu' => $request->LoaiDichVu,
+                'don_gia' => $request->DonGia,
+                'don_vi_tinh' => $request->DonViTinh,
+                'toa_nha_id' => $toaNha->id
+            ];
+            
+            $phiDichVu = PhiDichVu::create($phiDichVuData);
 
             DB::commit();
 
@@ -59,7 +82,7 @@ class PhiDichVuController extends Controller
             Log::error('Lỗi khi tạo phí dịch vụ: ' . $e->getMessage());
             return response()->json([
                 'status' => 'error',
-                'message' => 'Có lỗi xảy ra khi tạo phí dịch vụ'
+                'message' => 'Có lỗi xảy ra khi tạo phí dịch vụ: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -86,8 +109,30 @@ class PhiDichVuController extends Controller
         try {
             DB::beginTransaction();
 
-            $phiDichVu = PhiDichVu::findOrFail($id);
-            $phiDichVu->update($request->validated());
+            // Tìm phi dịch vụ theo ID hoặc MaDichVu
+            $phiDichVu = is_numeric($id) ? PhiDichVu::findOrFail($id) : PhiDichVu::where('ma_dich_vu', $id)->firstOrFail();
+            
+            // Lấy ID của tòa nhà dựa trên TenNha
+            $toaNha = DB::table('toa_nhas')->where('ten_nha', $request->TenNha)->first();
+            
+            if (!$toaNha) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Không tìm thấy tòa nhà với tên: ' . $request->TenNha
+                ], 422);
+            }
+            
+            // Chuyển đổi dữ liệu từ frontend sang định dạng database
+            $phiDichVuData = [
+                'ma_dich_vu' => $request->MaDichVu,
+                'ten_dich_vu' => $request->TenDichVu,
+                'loai_dich_vu' => $request->LoaiDichVu,
+                'don_gia' => $request->DonGia,
+                'don_vi_tinh' => $request->DonViTinh,
+                'toa_nha_id' => $toaNha->id
+            ];
+            
+            $phiDichVu->update($phiDichVuData);
 
             DB::commit();
 
@@ -101,7 +146,7 @@ class PhiDichVuController extends Controller
             Log::error('Lỗi khi cập nhật phí dịch vụ: ' . $e->getMessage());
             return response()->json([
                 'status' => 'error',
-                'message' => 'Có lỗi xảy ra khi cập nhật phí dịch vụ'
+                'message' => 'Có lỗi xảy ra khi cập nhật phí dịch vụ: ' . $e->getMessage()
             ], 500);
         }
     }
