@@ -27,11 +27,11 @@ import LoginIcon from '@mui/icons-material/Login'
 import ApiIcon from '@mui/icons-material/Api'
 
 const NAVIGATION = [
-  {
-    segment: 'Login',
-    title: 'Đăng nhập',
-    icon: <LoginIcon />
-  },
+  // {
+  //   segment: 'Login',
+  //   title: 'Đăng nhập',
+  //   icon: <LoginIcon />
+  // },
   {
     segment: 'ApiTest',
     title: 'Kiểm tra API',
@@ -114,9 +114,9 @@ function DemoPageContent({ pathname }) {
   let content
 
   switch (pathname) {
-    case '/Login':
-      content = <Login />
-      break
+    // case '/Login':
+    //   content = <Login />
+    //   break
     case '/ApiTest':
       content = <ApiTest />
       break
@@ -138,9 +138,6 @@ function DemoPageContent({ pathname }) {
     case '/KhachHang/KhachHang':
       content = <KhachHang />
       break
-    // case '/reports/traffic':
-    //   content = <ViewStatistics />;
-    //   break;
     default:
       content = (
         <Box

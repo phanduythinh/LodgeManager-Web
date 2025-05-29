@@ -3,8 +3,7 @@ import { StyledTableCell, StyledTableRow } from '~/components/StyledTable'
 import {
   Table, TableBody, TableContainer,
   TableHead, TableRow, Paper, Button, Box, TextField, Dialog, DialogActions,
-  DialogContent, DialogTitle, Grid,
-  CircularProgress
+  DialogContent, DialogTitle, Grid
 } from '@mui/material'
 import Autocomplete from '@mui/material/Autocomplete'
 import AddIcon from '@mui/icons-material/Add'
@@ -13,15 +12,21 @@ import Tooltip from '@mui/material/Tooltip'
 import DeleteIcon from '@mui/icons-material/Delete'
 import BorderColorIcon from '@mui/icons-material/BorderColor'
 import SearchIcon from '@mui/icons-material/Search'
-// import { ToaNhaData } from '~/apis/mock-data'
-import { phongService, toaNhaService } from "~/apis/services"
+import { ToaNhaData } from '~/apis/mock-data'
+import { phongService } from "~/apis/services"
 import { useConfirm } from 'material-ui-confirm'
 import { formatCurrency } from '~/components/formatCurrency'
 
 function Phong() {
-  const [rows, setRows] = useState([])
+  const [rows, setRows] = useState(() =>
+    ToaNhaData.flatMap(toaNha =>
+      toaNha.Phongs.map(phong => ({
+        ...phong,
+        TenNha: toaNha.TenNha
+      }))
+    )
+  )
   const [open, setOpen] = useState(false)
-  const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
     MaPhong: '',
     TenNha: '',
@@ -34,99 +39,15 @@ function Phong() {
     TrangThai: 'Còn trống'
   })
   const [errors, setErrors] = useState({})
-  const [editId, setEditId] = useState(null)
+  const [editIndex, setEditIndex] = useState(null)
   const [filterToaNha, setFilterToaNha] = useState(null)
   const [filterTang, setFilterTang] = useState(null)
   const [filterTrangThai, setFilterTrangThai] = useState(null)
   const [searchText, setSearchText] = useState('')
-  const [listToaNha, setListToaNha] = useState([])
   const confirm = useConfirm()
-  const [snackbar, setSnackbar] = useState({
-    open: false,
-    message: '',
-    severity: 'success'
-  })
 
-  const handleCloseSnackbar = () => {
-    setSnackbar(prev => ({ ...prev, open: false }))
-  }
-
-  const fetchData = async () => {
-    try {
-      setLoading(true)
-      const res = await phongService.getAll()
-      setRows(res.data)
-    } catch (error) {
-      console.error('Lỗi khi lấy danh sách phòng:', error)
-      let errorMessage = 'Không thể tải danh sách phòng.'
-      if (error.response && error.response.data && error.response.data.message) {
-        errorMessage = error.response.data.message
-      }
-      setSnackbar({
-        open: true,
-        message: errorMessage,
-        severity: 'error'
-      })
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    fetchData()
-  }, [])
-
-  // Fetch danh sách tòa nhà khi dialog mở
-  useEffect(() => {
-    const fetchToaNha = async () => {
-      try {
-        const res = await toaNhaService.getAll()
-        const data = res.data || []
-        const options = data.map(item => ({ title: item.TenNha }))
-        setListToaNha(options)
-      } catch (err) {
-        console.error('Lỗi khi lấy danh sách tòa nhà:', err)
-        let errorMessage = 'Không thể tải danh sách tòa nhà cho Autocomplete.'
-        if (err.response && err.response.data && err.response.data.message) {
-          errorMessage = err.response.data.message
-        }
-        setSnackbar({
-          open: true,
-          message: errorMessage,
-          severity: 'error'
-        })
-      }
-    }
-
-    if (open) {
-      fetchToaNha()
-    }
-  }, [open])
-
-  const handleDelete = async (MaPhong) => {
-    try {
-      setLoading(true)
-      await phongService.delete(MaPhong)
-      await fetchData() // Gọi lại fetchData để cập nhật danh sách
-      setSnackbar({
-        open: true,
-        message: 'Xóa phòng thành công',
-        severity: 'success'
-      })
-    } catch (error) {
-      console.error('Lỗi khi xóa phòng:', error)
-      let errorMessage = 'Có lỗi xảy ra khi xóa phòng.'
-      if (error.response && error.response.data && error.response.data.message) {
-        errorMessage = error.response.data.message
-      }
-      setSnackbar({
-        open: true,
-        message: errorMessage,
-        severity: 'error'
-      })
-    } finally {
-      setLoading(false)
-    }
+  const handleDelete = (MaPhong) => {
+    setRows(rows.filter(row => row.MaPhong !== MaPhong))
   }
 
   const handleOpenAdd = () => {
@@ -142,14 +63,14 @@ function Phong() {
       TrangThai: 'Còn trống'
     })
     setErrors({})
-    setEditId(null)
+    setEditIndex(null)
     setOpen(true)
   }
 
-  const handleOpenEdit = (row) => {
+  const handleOpenEdit = (row, index) => {
     setFormData(row)
     setErrors({})
-    setEditId(row.MaPhong)
+    setEditIndex(index)
     setOpen(true)
   }
 
@@ -186,44 +107,17 @@ function Phong() {
   }
 
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     if (!validateForm()) return
 
-    try {
-      setLoading(true)
-      if (editId === null) {
-        // Tạo mới
-        await phongService.create(formData)
-        setSnackbar({
-          open: true,
-          message: 'Thêm phòng thành công',
-          severity: 'success'
-        })
-      } else {
-        // Sửa
-        await phongService.update(editId, formData)
-        setSnackbar({
-          open: true,
-          message: 'Cập nhật phòng thành công',
-          severity: 'success'
-        })
-      }
-      await fetchData() // Refresh danh sách
-      setOpen(false)
-    } catch (error) {
-      console.error('Lỗi khi lưu phòng:', error)
-      let errorMessage = 'Có lỗi xảy ra khi lưu phòng.'
-      if (error.response && error.response.data && error.response.data.message) {
-        errorMessage = error.response.data.message
-      }
-      setSnackbar({
-        open: true,
-        message: errorMessage,
-        severity: 'error'
-      })
-    } finally {
-      setLoading(false)
+    if (editIndex === null) {
+      setRows(prev => [...prev, formData])
+    } else {
+      const updated = [...rows]
+      updated[editIndex] = formData
+      setRows(updated)
     }
+    setOpen(false)
   }
 
   const hanhdleDeletePhong = (row) => {
@@ -266,7 +160,7 @@ function Phong() {
     { title: 'Tầng 9' },
     { title: 'Tầng 10' }
   ]
-  // const listToaNha = [...new Set(toaNhaService.map(p => p.TenNha))].map(nha => ({ title: nha }))
+  const listToaNha = [...new Set(ToaNhaData.map(p => p.TenNha))].map(nha => ({ title: nha }))
 
   return (
     <Box sx={{ m: 1 }}>
@@ -358,7 +252,7 @@ function Phong() {
 
       {/* Dialog Thêm/Sửa */}
       <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
-        <DialogTitle sx={{ bgcolor: '#EEEEEE', py: 1 }}>{editId === null ? 'Thêm phòng' : 'Sửa phòng'}</DialogTitle>
+        <DialogTitle sx={{ bgcolor: '#EEEEEE', py: 1 }}>{editIndex === null ? 'Thêm phòng' : 'Sửa phòng'}</DialogTitle>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <Grid item xs={4} sx={{ width: 'calc(520px/3)' }}>
@@ -368,7 +262,7 @@ function Phong() {
                 name="MaPhong"
                 value={formData.MaPhong}
                 onChange={handleChange}
-                disabled={editId !== null}
+                disabled={editIndex !== null}
                 error={!!errors.MaPhong}
                 helperText={errors.MaPhong}
               />
@@ -492,98 +386,83 @@ function Phong() {
 
 
         <DialogActions>
-          <Button onClick={handleClose} disabled={loading}>Hủy</Button>
-          <Button onClick={handleSubmit} variant="contained" disabled={loading}>
-            {loading ? <CircularProgress size={24} /> : 'Lưu'}
-          </Button>
+          <Button onClick={handleClose}>Hủy</Button>
+          <Button onClick={handleSubmit} variant="contained">Lưu</Button>
         </DialogActions>
       </Dialog >
 
-      {loading && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
-          <CircularProgress />
-        </Box>
-      )}
 
-      {!loading && (
-        <TableContainer component={Paper} sx={{ marginTop: '16px' }}>
-          <Table sx={{ minWidth: 700 }} aria-label="customized table">
-            <TableHead>
-              <TableRow>
-                <StyledTableCell>Mã phòng</StyledTableCell>
-                <StyledTableCell>Tên phòng</StyledTableCell>
-                <StyledTableCell align='right'>Giá thuê</StyledTableCell>
-                <StyledTableCell align='right'>Đặt cọc</StyledTableCell>
-                <StyledTableCell align='right'>Diện tích</StyledTableCell>
-                <StyledTableCell align='right'>Số khách</StyledTableCell>
-                <StyledTableCell align='center'>Trạng thái</StyledTableCell>
-                <StyledTableCell align='center'>Tháo tác</StyledTableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filteredRows.length === 0 ? (
-                <TableRow>
-                  <StyledTableCell colSpan={6} align="center">Không có dữ liệu</StyledTableCell>
-                </TableRow>
-              ) : (
-                filteredRows.map((row, index) => (
-                  <StyledTableRow key={row.MaPhong}>
-                    <StyledTableCell sx={{ p: '8px' }}>{row.MaPhong}</StyledTableCell>
-                    <StyledTableCell sx={{ p: '8px' }}>
-                      <Box>{row.TenPhong}</Box>
-                      <Box sx={{ color: '#B9B9C3' }}>Tòa nhà: {row.TenNha}</Box>
-                      <Box sx={{ color: '#B9B9C3' }}>{row.Tang}</Box>
-                    </StyledTableCell>
-                    <StyledTableCell align='right' sx={{ p: '8px' }}>{formatCurrency(row.GiaThue)}</StyledTableCell>
-                    <StyledTableCell align='right' sx={{ p: '8px' }}>{formatCurrency(row.DatCoc)}</StyledTableCell>
-                    <StyledTableCell align='right' sx={{ p: '8px' }}>{row.DienTich} m²</StyledTableCell>
-                    <StyledTableCell align='right' sx={{ p: '8px' }}>{row.SoKhachToiDa}</StyledTableCell>
-                    <StyledTableCell align='center' sx={{ p: '8px' }}>
-                      <span
-                        style={{
-                          padding: '4px 8px',
-                          borderRadius: '12px',
-                          color: row.TrangThai === 'Đang ở' ? '#388e3c' : '#EA5455',
-                          backgroundColor: row.TrangThai === 'Đang ở' ? '#c8e6c9' : '#EA54551F',
-                          fontWeight: 600,
-                          fontSize: '13px',
-                          display: 'inline-block',
-                          textAlign: 'center',
-                          minWidth: '80px'
-                        }}
+      <TableContainer component={Paper} sx={{ marginTop: '16px' }}>
+        <Table sx={{ minWidth: 700 }} aria-label="customized table">
+          <TableHead>
+            <TableRow>
+              <StyledTableCell>Mã phòng</StyledTableCell>
+              <StyledTableCell>Tên phòng</StyledTableCell>
+              <StyledTableCell align='right'>Giá thuê</StyledTableCell>
+              <StyledTableCell align='right'>Đặt cọc</StyledTableCell>
+              <StyledTableCell align='right'>Diện tích</StyledTableCell>
+              <StyledTableCell align='right'>Số khách</StyledTableCell>
+              <StyledTableCell align='center'>Trạng thái</StyledTableCell>
+              <StyledTableCell align='center'>Tháo tác</StyledTableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {filteredRows.map((row, index) => (
+              <StyledTableRow key={row.MaPhong}>
+                <StyledTableCell sx={{ p: '8px' }}>{row.MaPhong}</StyledTableCell>
+                <StyledTableCell sx={{ p: '8px' }}>
+                  <Box>{row.TenPhong}</Box>
+                  <Box sx={{ color: '#B9B9C3' }}>Tòa nhà: {row.TenNha}</Box>
+                  <Box sx={{ color: '#B9B9C3' }}>{row.Tang}</Box>
+                </StyledTableCell>
+                <StyledTableCell align='right' sx={{ p: '8px' }}>{formatCurrency(row.GiaThue)}</StyledTableCell>
+                <StyledTableCell align='right' sx={{ p: '8px' }}>{formatCurrency(row.DatCoc)}</StyledTableCell>
+                <StyledTableCell align='right' sx={{ p: '8px' }}>{row.DienTich} m²</StyledTableCell>
+                <StyledTableCell align='right' sx={{ p: '8px' }}>{row.SoKhachToiDa}</StyledTableCell>
+                <StyledTableCell align='center' sx={{ p: '8px' }}>
+                  <span
+                    style={{
+                      padding: '4px 8px',
+                      borderRadius: '12px',
+                      color: row.TrangThai === 'Đang ở' ? '#388e3c' : '#EA5455',
+                      backgroundColor: row.TrangThai === 'Đang ở' ? '#c8e6c9' : '#EA54551F',
+                      fontWeight: 600,
+                      fontSize: '13px',
+                      display: 'inline-block',
+                      textAlign: 'center',
+                      minWidth: '80px'
+                    }}
+                  >
+                    {row.TrangThai}
+                  </span>
+                </StyledTableCell>
+                <StyledTableCell sx={{ p: '8px' }}>
+                  <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+                    <Tooltip title="Sửa">
+                      <Button
+                        variant="contained"
+                        sx={{ bgcolor: '#828688' }}
+                        onClick={() => handleOpenEdit(row, index)}
                       >
-                        {row.TrangThai}
-                      </span>
-                    </StyledTableCell>
-                    <StyledTableCell sx={{ p: '8px' }}>
-                      <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
-                        <Tooltip title="Sửa">
-                          <Button
-                            variant="contained"
-                            sx={{ bgcolor: '#828688' }}
-                            onClick={() => handleOpenEdit(row, index)}
-                          >
-                            <BorderColorIcon fontSize='small' />
-                          </Button>
-                        </Tooltip>
-                        <Tooltip title="Xóa">
-                          <Button
-                            variant="contained"
-                            sx={{ bgcolor: '#EA5455' }}
-                            onClick={() => hanhdleDeletePhong(row)}
-                          >
-                            <DeleteIcon fontSize='small' />
-                          </Button>
-                        </Tooltip>
-                      </Box>
-                    </StyledTableCell>
-                  </StyledTableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      )}
+                        <BorderColorIcon fontSize='small' />
+                      </Button>
+                    </Tooltip>
+                    <Tooltip title="Xóa">
+                      <Button
+                        variant="contained"
+                        sx={{ bgcolor: '#EA5455' }}
+                        onClick={() => hanhdleDeletePhong(row)}
+                      >
+                        <DeleteIcon fontSize='small' />
+                      </Button>
+                    </Tooltip>
+                  </Box>
+                </StyledTableCell>
+              </StyledTableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
     </Box >
   )
 }

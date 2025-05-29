@@ -262,9 +262,9 @@ function ToaNha() {
 
   return (
     <Box sx={{ m: 1 }}>
-      <Snackbar 
-        open={snackbar.open} 
-        autoHideDuration={6000} 
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
         onClose={handleCloseSnackbar}
         anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
@@ -280,9 +280,9 @@ function ToaNha() {
           gap: 2
         }}>
           <Tooltip title="Thêm tòa nhà">
-            <Button 
-              variant="contained" 
-              onClick={handleOpenAdd} 
+            <Button
+              variant="contained"
+              onClick={handleOpenAdd}
               sx={{ bgcolor: '#248F55' }}
               disabled={loading}
             >
@@ -318,6 +318,9 @@ function ToaNha() {
         <TextField
           sx={{
             width: '100%',
+            '& .toolpad-demo-app-x0zmg8-MuiInputBase-input-MuiOutlinedInput-input': {
+              py: '7.5px'
+            },
             '& .MuiFormLabel-root': {
               top: -5
             }
@@ -446,8 +449,8 @@ function ToaNha() {
 
         <DialogActions>
           <Button onClick={handleClose}>Hủy</Button>
-          <Button 
-            onClick={handleSubmit} 
+          <Button
+            onClick={handleSubmit}
             variant="contained"
             disabled={loading}
           >
