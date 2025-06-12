@@ -434,13 +434,6 @@ function PhiDichVu() {
         </DialogActions>
       </Dialog >
 
-
-      {loading && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
-          <CircularProgress />
-        </Box>
-      )}
-
       {!loading && (
         <TableContainer component={Paper} sx={{ marginTop: '16px' }}>
           <Table sx={{ minWidth: 700 }} aria-label="customized table">

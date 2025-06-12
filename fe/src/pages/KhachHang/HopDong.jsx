@@ -735,7 +735,7 @@ function HopDong() {
             )
           }}
         />
-        <Button variant="contained" onClick={handleSearch}>Tìm kiếm</Button>
+        {/* <Button variant="contained" onClick={handleSearch}>Tìm kiếm</Button> */}
       </Box>
 
       {/* Dialog Thêm/Sửa hợp đồng */}

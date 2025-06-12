@@ -288,9 +288,10 @@ function ToaNha() {
               variant="contained"
               onClick={handleOpenAdd}
               sx={{ bgcolor: '#248F55' }}
-              disabled={loading}
+              // disabled={loading}
             >
-              {loading ? <CircularProgress size={24} /> : <AddIcon />}
+              {/* {loading ? <CircularProgress size={24} /> : <AddIcon />} */}
+              <AddIcon />
             </Button>
           </Tooltip>
           <Tooltip title="Xuất báo cáo">
