@@ -150,9 +150,6 @@ function DemoPageContent({ pathname }) {
     case '/KhachHang/KhachHang':
       content = <KhachHang />
       break
-    // case '/reports/traffic':
-    //   content = <ViewStatistics />;
-    //   break;
     default:
       content = (
         <Box
@@ -164,7 +161,15 @@ function DemoPageContent({ pathname }) {
             textAlign: 'center'
           }}
         >
-          <Typography>Xin chào Đại Ca</Typography>
+          <Box
+            component="img"
+            src="/img/logo.jpg"
+            alt="Ảnh tòa nhà"
+            sx={{ maxWidth: 200 }}
+          />
+          <Typography variant="h4" component="h1">
+            Hệ thống quản lý nhà trọ
+          </Typography>
         </Box>
       )
   }

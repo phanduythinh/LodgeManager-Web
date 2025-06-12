@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { phongService, toaNhaService } from '~/apis/services'
 import {
   Table, TableBody, TableContainer, TableHead, TableRow, Paper, Button, Box, TextField, Dialog, DialogActions,
-  DialogContent, DialogTitle, Grid, CircularProgress, Typography
+  DialogContent, DialogTitle, Grid, CircularProgress, Snackbar, Alert
 } from '@mui/material'
 import Autocomplete from '@mui/material/Autocomplete'
 import AddIcon from '@mui/icons-material/Add'
@@ -32,12 +32,19 @@ function Phong() {
     TrangThai: 'Còn trống'
   })
   const [errors, setErrors] = useState({})
-  const [editIndex, setEditIndex] = useState(null)
+  const [editId, setEditId] = useState(null)
   const [filterToaNha, setFilterToaNha] = useState(null)
   const [filterTang, setFilterTang] = useState(null)
   const [filterTrangThai, setFilterTrangThai] = useState(null)
   const [searchText, setSearchText] = useState('')
+  const [listToaNha, setListToaNha] = useState([])
   const confirm = useConfirm()
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'success'
+  })
+
 
   useEffect(() => {
     const fetchData = async () => {
@@ -45,14 +52,14 @@ function Phong() {
         setLoading(true)
         // Lấy danh sách tòa nhà
         const buildingsResponse = await toaNhaService.getAll()
-        const buildingsData = Array.isArray(buildingsResponse) ? buildingsResponse : 
-                          (buildingsResponse && buildingsResponse.data) ? buildingsResponse.data : []
+        const buildingsData = Array.isArray(buildingsResponse) ? buildingsResponse :
+          (buildingsResponse && buildingsResponse.data) ? buildingsResponse.data : []
         setBuildings(buildingsData)
 
         // Lấy danh sách phòng
         const response = await phongService.getAll()
-        console.log('API response:', response)
-        
+        // console.log('API response:', response)
+
         // Xử lý dữ liệu
         let data = []
         if (Array.isArray(response)) {
@@ -60,7 +67,7 @@ function Phong() {
         } else if (response && Array.isArray(response.data)) {
           data = response.data
         }
-        
+
         setRooms(data)
       } catch (error) {
         console.error('Lỗi khi lấy danh sách phòng:', error)
@@ -68,7 +75,7 @@ function Phong() {
         setLoading(false)
       }
     }
-    
+
     fetchData()
   }, [])
 
@@ -89,14 +96,14 @@ function Phong() {
       TrangThai: 'Còn trống'
     })
     setErrors({})
-    setEditIndex(null)
+    setEditId(null)
     setOpen(true)
   }
 
-  const handleOpenEdit = (row, index) => {
+  const handleOpenEdit = (row) => {
     setFormData(row)
     setErrors({})
-    setEditIndex(index)
+    setEditId(row.MaPhong)
     setOpen(true)
   }
 
@@ -136,7 +143,7 @@ function Phong() {
 
     try {
       setLoading(true)
-      
+
       // Chuẩn bị dữ liệu trước khi gửi
       // Đảm bảo các trường số được chuyển từ chuỗi sang số
       const preparedData = {
@@ -146,9 +153,9 @@ function Phong() {
         DienTich: formData.DienTich ? Number(formData.DienTich) : 0,
         SoKhachToiDa: formData.SoKhachToiDa ? Number(formData.SoKhachToiDa) : 0
       }
-      
+
       // Kiểm tra trùng mã phòng khi thêm mới
-      if (editIndex === null) {
+      if (editId === null) {
         const isDuplicate = rooms.some(r => r.MaPhong === preparedData.MaPhong);
         if (isDuplicate) {
           setErrors(prev => ({
@@ -161,30 +168,38 @@ function Phong() {
       }
 
       // Xử lý thêm mới hoặc cập nhật
-      if (editIndex === null) {
+      if (editId === null) {
         // Thêm mới
         try {
           // Gọi API
           const response = await phongService.create(preparedData);
           console.log('Kết quả thêm phòng:', response);
-          
+
           // Lấy lại danh sách phòng
           const updatedRoomsResponse = await phongService.getAll();
-          const updatedRooms = Array.isArray(updatedRoomsResponse) ? updatedRoomsResponse : 
-                             (updatedRoomsResponse && updatedRoomsResponse.data) ? updatedRoomsResponse.data : [];
-          
+          const updatedRooms = Array.isArray(updatedRoomsResponse) ? updatedRoomsResponse :
+            (updatedRoomsResponse && updatedRoomsResponse.data) ? updatedRoomsResponse.data : [];
+
           setRooms(updatedRooms);
           setOpen(false);
-          alert('Thêm phòng thành công!');
+          setSnackbar({
+            open: true,
+            message: 'Thêm phòng thành công!',
+            severity: 'success'
+          })
         } catch (apiError) {
           console.error('Lỗi khi gọi API thêm phòng:', apiError);
-          
+
           // Kiểm tra nếu là môi trường phát triển hoặc API không hoạt động
           if (process.env.NODE_ENV === 'development') {
             // Fallback: thêm trực tiếp vào state nếu API lỗi
             setRooms(prev => [...prev, preparedData]);
             setOpen(false);
-            alert('Thêm phòng thành công (chỉ lưu trên giao diện)!');
+            setSnackbar({
+              open: true,
+              message: 'Thêm phòng thành công (chỉ lưu trên giao diện)!',
+              severity: 'success'
+            })
           } else {
             throw apiError; // Ném lỗi để xử lý ở catch bên ngoài
           }
@@ -195,26 +210,34 @@ function Phong() {
           // Gọi API
           const response = await phongService.update(preparedData.MaPhong, preparedData);
           console.log('Kết quả cập nhật phòng:', response);
-          
+
           // Lấy lại danh sách phòng
           const updatedRoomsResponse = await phongService.getAll();
-          const updatedRooms = Array.isArray(updatedRoomsResponse) ? updatedRoomsResponse : 
-                             (updatedRoomsResponse && updatedRoomsResponse.data) ? updatedRoomsResponse.data : [];
-          
+          const updatedRooms = Array.isArray(updatedRoomsResponse) ? updatedRoomsResponse :
+            (updatedRoomsResponse && updatedRoomsResponse.data) ? updatedRoomsResponse.data : [];
+
           setRooms(updatedRooms);
           setOpen(false);
-          alert('Cập nhật phòng thành công!');
+          setSnackbar({
+            open: true,
+            message: 'Lưu tòa nhà thành công',
+            severity: 'success'
+          })
         } catch (apiError) {
           console.error('Lỗi khi gọi API cập nhật phòng:', apiError);
-          
+
           // Kiểm tra nếu là môi trường phát triển hoặc API không hoạt động
           if (process.env.NODE_ENV === 'development') {
             // Fallback: cập nhật trực tiếp vào state nếu API lỗi
             const updatedRooms = [...rooms];
-            updatedRooms[editIndex] = preparedData;
+            updatedRooms[editId] = preparedData;
             setRooms(updatedRooms);
             setOpen(false);
-            alert('Cập nhật phòng thành công (chỉ lưu trên giao diện)!');
+            setSnackbar({
+              open: true,
+              message: 'Cập nhật phòng thành công (chỉ lưu trên giao diện)!',
+              severity: 'success'
+            })
           } else {
             throw apiError; // Ném lỗi để xử lý ở catch bên ngoài
           }
@@ -224,7 +247,7 @@ function Phong() {
       console.error('Lỗi khi lưu phòng:', error);
       // Hiển thị thông tin lỗi chi tiết hơn
       let errorMessage = 'Có lỗi xảy ra khi lưu phòng. ';
-      
+
       if (error.response) {
         // Lỗi từ server với mã trạng thái
         errorMessage += `Mã lỗi: ${error.response.status}. `;
@@ -238,7 +261,7 @@ function Phong() {
         // Lỗi khác
         errorMessage += error.message || 'Lỗi không xác định.';
       }
-      
+
       alert(errorMessage);
     } finally {
       setLoading(false);
@@ -282,33 +305,62 @@ function Phong() {
     return true
   })
 
+  const listTrangThai = [{ title: 'Đang ở' }, { title: 'Còn trống' }]
+  const listTang = [
+    { title: 'Tầng 1' },
+    { title: 'Tầng 2' },
+    { title: 'Tầng 3' },
+    { title: 'Tầng 4' },
+    { title: 'Tầng 5' },
+    { title: 'Tầng 6' },
+    { title: 'Tầng 7' },
+    { title: 'Tầng 8' },
+    { title: 'Tầng 9' },
+    { title: 'Tầng 10' }
+  ]
+
   // Lấy danh sách trạng thái từ rooms
-  const getStatuses = () => {
-    const statuses = [...new Set(rooms.map(room => room.TrangThai))]
-    return statuses.map(status => ({ title: status }))
-  }
+  // const getStatuses = () => {
+  //   const statuses = [...new Set(rooms.map(room => room.TrangThai))]
+  //   return statuses.map(status => ({ title: status }))
+  // }
 
   // Lấy danh sách tầng từ rooms
-  const getFloors = () => {
-    const floors = [...new Set(rooms.map(room => room.Tang))]
-    return floors.map(floor => ({ title: floor }))
-  }
+  // const getFloors = () => {
+  //   const floors = [...new Set(rooms.map(room => room.Tang))]
+  //   return floors.map(floor => ({ title: floor }))
+  // }
 
   // Lấy danh sách tòa nhà
   const getBuildingNames = () => {
     return buildings.map(building => ({ title: building.TenNha }))
   }
-  
-  if (loading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
-        <CircularProgress />
-      </Box>
-    )
+
+  // if (loading) {
+  //   return (
+  //     <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+  //       <CircularProgress />
+  //     </Box>
+  //   )
+  // }
+
+  const handleCloseSnackbar = () => {
+    setSnackbar(prev => ({ ...prev, open: false }))
   }
-  
+
   return (
     <Box sx={{ m: 1 }}>
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h1 style={{ margin: 0 }}>Quản lý phòng</h1>
         <Box sx={{ display: 'flex', gap: 2 }}>
@@ -340,7 +392,7 @@ function Phong() {
           clearOnEscape
         />
         <Autocomplete
-          options={getFloors()}
+          options={listTang}
           getOptionLabel={(option) => option.title}
           onChange={(e, value) => setFilterTang(value?.title || null)}
           sx={{
@@ -357,7 +409,7 @@ function Phong() {
           clearOnEscape
         />
         <Autocomplete
-          options={getStatuses()}
+          options={listTrangThai}
           getOptionLabel={(option) => option.title}
           onChange={(e, value) => setFilterTrangThai(value?.title || null)}
           sx={{
@@ -397,7 +449,7 @@ function Phong() {
 
       {/* Dialog Thêm/Sửa */}
       <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
-        <DialogTitle sx={{ bgcolor: '#EEEEEE', py: 1 }}>{editIndex === null ? 'Thêm phòng' : 'Sửa phòng'}</DialogTitle>
+        <DialogTitle sx={{ bgcolor: '#EEEEEE', py: 1 }}>{editId === null ? 'Thêm phòng' : 'Sửa phòng'}</DialogTitle>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <Grid item xs={4} sx={{ width: 'calc(520px/3)' }}>
@@ -407,7 +459,7 @@ function Phong() {
                 name="MaPhong"
                 value={formData.MaPhong}
                 onChange={handleChange}
-                disabled={editIndex !== null}
+                disabled={editId !== null}
                 error={!!errors.MaPhong}
                 helperText={errors.MaPhong}
               />
@@ -444,9 +496,9 @@ function Phong() {
               <Grid item xs={4} sx={{ width: 'calc(520px/3)' }}>
                 <Autocomplete
                   disablePortal
-                  options={getFloors()}
+                  options={listTang}
                   getOptionLabel={(option) => option.title}
-                  value={getFloors().find(t => t.title === formData.Tang) || null}
+                  value={listTang.find(t => t.title === formData.Tang) || null}
                   onChange={(e, value) => handleAutoChange('Tang', value?.title || '')}
                   renderInput={(params) => (
                     <TextField
@@ -511,9 +563,9 @@ function Phong() {
               <Grid item xs={4} sx={{ width: 'calc(520px/3)' }}>
                 <Autocomplete
                   disablePortal
-                  options={getStatuses()}
+                  options={listTrangThai}
                   getOptionLabel={(option) => option.title}
-                  value={getStatuses().find(t => t.title === formData.TrangThai) || null}
+                  value={listTrangThai.find(t => t.title === formData.TrangThai) || null}
                   onChange={(e, value) => handleAutoChange('TrangThai', value?.title || '')}
                   renderInput={(params) => (
                     <TextField
@@ -530,88 +582,98 @@ function Phong() {
         </DialogContent>
 
         <DialogActions>
-          <Button onClick={handleClose}>Hủy</Button>
-          <Button onClick={handleSubmit} variant="contained">Lưu</Button>
+          <Button onClick={handleClose} disabled={loading}>Hủy</Button>
+          <Button onClick={handleSubmit} variant="contained" disabled={loading}>
+            {loading ? <CircularProgress size={24} /> : 'Lưu'}
+          </Button>
         </DialogActions>
       </Dialog>
 
-      <TableContainer component={Paper} sx={{ marginTop: '16px' }}>
-        <Table sx={{ minWidth: 700 }} aria-label="customized table">
-          <TableHead>
-            <TableRow>
-              <StyledTableCell>Mã phòng</StyledTableCell>
-              <StyledTableCell>Tên phòng</StyledTableCell>
-              <StyledTableCell align='right'>Giá thuê</StyledTableCell>
-              <StyledTableCell align='right'>Đặt cọc</StyledTableCell>
-              <StyledTableCell align='right'>Diện tích</StyledTableCell>
-              <StyledTableCell align='right'>Số khách</StyledTableCell>
-              <StyledTableCell align='center'>Trạng thái</StyledTableCell>
-              <StyledTableCell align='center'>Thao tác</StyledTableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {filteredRooms.length === 0 ? (
+      {loading && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+          <CircularProgress />
+        </Box>
+      )}
+
+      {!loading && (
+        <TableContainer component={Paper} sx={{ marginTop: '16px' }}>
+          <Table sx={{ minWidth: 700 }} aria-label="customized table">
+            <TableHead>
               <TableRow>
-                <StyledTableCell colSpan={8} align="center">Không có dữ liệu</StyledTableCell>
+                <StyledTableCell>Mã phòng</StyledTableCell>
+                <StyledTableCell>Tên phòng</StyledTableCell>
+                <StyledTableCell align='right'>Giá thuê</StyledTableCell>
+                <StyledTableCell align='right'>Đặt cọc</StyledTableCell>
+                <StyledTableCell align='right'>Diện tích</StyledTableCell>
+                <StyledTableCell align='right'>Số khách</StyledTableCell>
+                <StyledTableCell align='center'>Trạng thái</StyledTableCell>
+                <StyledTableCell align='center'>Thao tác</StyledTableCell>
               </TableRow>
-            ) : (
-              filteredRooms.map((room, index) => (
-                <StyledTableRow key={room.MaPhong}>
-                  <StyledTableCell sx={{ p: '8px' }}>{room.MaPhong}</StyledTableCell>
-                  <StyledTableCell sx={{ p: '8px' }}>
-                    <Box>{room.TenPhong}</Box>
-                    <Box sx={{ color: '#B9B9C3' }}>Tòa nhà: {room.TenNha}</Box>
-                    <Box sx={{ color: '#B9B9C3' }}>{room.Tang}</Box>
-                  </StyledTableCell>
-                  <StyledTableCell align='right' sx={{ p: '8px' }}>{formatCurrency(room.GiaThue)}</StyledTableCell>
-                  <StyledTableCell align='right' sx={{ p: '8px' }}>{formatCurrency(room.DatCoc)}</StyledTableCell>
-                  <StyledTableCell align='right' sx={{ p: '8px' }}>{room.DienTich} m²</StyledTableCell>
-                  <StyledTableCell align='right' sx={{ p: '8px' }}>{room.SoKhachToiDa}</StyledTableCell>
-                  <StyledTableCell align='center' sx={{ p: '8px' }}>
-                    <span
-                      style={{
-                        padding: '4px 8px',
-                        borderRadius: '12px',
-                        color: room.TrangThai === 'Đang ở' ? '#388e3c' : '#EA5455',
-                        backgroundColor: room.TrangThai === 'Đang ở' ? '#c8e6c9' : '#EA54551F',
-                        fontWeight: 600,
-                        fontSize: '13px',
-                        display: 'inline-block',
-                        textAlign: 'center',
-                        minWidth: '80px'
-                      }}
-                    >
-                      {room.TrangThai}
-                    </span>
-                  </StyledTableCell>
-                  <StyledTableCell sx={{ p: '8px' }}>
-                    <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
-                      <Tooltip title="Sửa">
-                        <Button
-                          variant="contained"
-                          sx={{ bgcolor: '#828688' }}
-                          onClick={() => handleOpenEdit(room, index)}
-                        >
-                          <BorderColorIcon fontSize='small' />
-                        </Button>
-                      </Tooltip>
-                      <Tooltip title="Xóa">
-                        <Button
-                          variant="contained"
-                          sx={{ bgcolor: '#EA5455' }}
-                          onClick={() => hanhdleDeletePhong(room)}
-                        >
-                          <DeleteIcon fontSize='small' />
-                        </Button>
-                      </Tooltip>
-                    </Box>
-                  </StyledTableCell>
-                </StyledTableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+            </TableHead>
+            <TableBody>
+              {filteredRooms.length === 0 ? (
+                <TableRow>
+                  <StyledTableCell colSpan={8} align="center">Không có dữ liệu</StyledTableCell>
+                </TableRow>
+              ) : (
+                filteredRooms.map((room, index) => (
+                  <StyledTableRow key={room.MaPhong}>
+                    <StyledTableCell sx={{ p: '8px' }}>{room.MaPhong}</StyledTableCell>
+                    <StyledTableCell sx={{ p: '8px' }}>
+                      <Box>{room.TenPhong}</Box>
+                      <Box sx={{ color: '#B9B9C3' }}>Tòa nhà: {room.TenNha}</Box>
+                      <Box sx={{ color: '#B9B9C3' }}>{room.Tang}</Box>
+                    </StyledTableCell>
+                    <StyledTableCell align='right' sx={{ p: '8px' }}>{formatCurrency(room.GiaThue)}</StyledTableCell>
+                    <StyledTableCell align='right' sx={{ p: '8px' }}>{formatCurrency(room.DatCoc)}</StyledTableCell>
+                    <StyledTableCell align='right' sx={{ p: '8px' }}>{room.DienTich} m²</StyledTableCell>
+                    <StyledTableCell align='right' sx={{ p: '8px' }}>{room.SoKhachToiDa}</StyledTableCell>
+                    <StyledTableCell align='center' sx={{ p: '8px' }}>
+                      <span
+                        style={{
+                          padding: '4px 8px',
+                          borderRadius: '12px',
+                          color: room.TrangThai === 'Đang ở' ? '#388e3c' : '#EA5455',
+                          backgroundColor: room.TrangThai === 'Đang ở' ? '#c8e6c9' : '#EA54551F',
+                          fontWeight: 600,
+                          fontSize: '13px',
+                          display: 'inline-block',
+                          textAlign: 'center',
+                          minWidth: '80px'
+                        }}
+                      >
+                        {room.TrangThai}
+                      </span>
+                    </StyledTableCell>
+                    <StyledTableCell sx={{ p: '8px' }}>
+                      <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+                        <Tooltip title="Sửa">
+                          <Button
+                            variant="contained"
+                            sx={{ bgcolor: '#828688' }}
+                            onClick={() => handleOpenEdit(room, index)}
+                          >
+                            <BorderColorIcon fontSize='small' />
+                          </Button>
+                        </Tooltip>
+                        <Tooltip title="Xóa">
+                          <Button
+                            variant="contained"
+                            sx={{ bgcolor: '#EA5455' }}
+                            onClick={() => hanhdleDeletePhong(room)}
+                          >
+                            <DeleteIcon fontSize='small' />
+                          </Button>
+                        </Tooltip>
+                      </Box>
+                    </StyledTableCell>
+                  </StyledTableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
     </Box>
   )
 }
