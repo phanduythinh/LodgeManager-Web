@@ -60,7 +60,7 @@ export const hoaDonService = {
     getAll: () => api.get('/hoa-don'),
     getById: (id) => api.get(`/hoa-don/${id}`),
     create: (data) => api.post('/hoa-don', data),
-    update: (id, data) => api.put(`/hop-dong/${id}`, data),
+    update: (id, data) => api.put(`/hoa-don/${id}`, data),
     delete: (id) => api.delete(`/hoa-don/${id}`),
     search: (query) => api.get(`/hoa-don/search?q=${query}`),
     thanhToan: (id, data) => api.post(`/hoa-don/${id}/thanh-toan`, data)
@@ -71,7 +71,7 @@ export const giayToService = {
     getAll: () => api.get('/giay-to'),
     getById: (id) => api.get(`/giay-to/${id}`),
     create: (data) => api.post('/giay-to', data),
-    update: (id, data) => api.put(`/hop-dong/${id}`, data),
+    update: (id, data) => api.put(`/giay-to/${id}`, data),
     delete: (id) => api.delete(`/giay-to/${id}`),
     search: (query) => api.get(`/giay-to/search?q=${query}`),
     upload: (data) => api.post('/giay-to/upload', data),

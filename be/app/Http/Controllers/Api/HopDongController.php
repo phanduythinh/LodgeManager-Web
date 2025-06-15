@@ -126,111 +126,80 @@ class HopDongController extends Controller
 
     public function update(Request $request, HopDong $hopDong): JsonResponse
     {
+        // 1. Normalize data before validation
+        $data = $request->all();
+        $data['NgayBatDau'] = $this->normalizeDateToYMD($request->input('NgayBatDau'));
+        $data['NgayKetThuc'] = $this->normalizeDateToYMD($request->input('NgayKetThuc'));
+        $data['NgayTinhTien'] = $this->normalizeDateToYMD($request->input('NgayTinhTien'));
+
+        // 2. Validate the normalized data
+        $validator = Validator::make($data, [
+            'MaHopDong' => 'required|string|max:255|unique:hop_dongs,ma_hop_dong,' . $hopDong->id,
+            'MaPhongId' => 'required|integer|exists:phongs,id',
+            'NgayBatDau' => 'nullable|date_format:Y-m-d',
+            'NgayKetThuc' => 'nullable|date_format:Y-m-d|after_or_equal:NgayBatDau',
+            'TienThue' => 'nullable|numeric|min:0',
+            'TienCoc' => 'nullable|numeric|min:0',
+            'ChuKyThanhToan' => 'nullable|integer|min:1',
+            'NgayTinhTien' => 'nullable|date_format:Y-m-d',
+            'TrangThai' => 'nullable|string',
+            'KhachHangs' => 'required|array|min:1',
+            'KhachHangs.*.id' => 'required|integer|exists:khach_hangs,id',
+            'DichVus' => 'nullable|array',
+            'DichVus.*.id' => 'required_with:DichVus|integer|exists:phi_dich_vus,id',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Dữ liệu không hợp lệ.',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        DB::beginTransaction();
         try {
-            // Xử lý dữ liệu khách hàng và dịch vụ từ frontend
-            $khachHangIds = [];
-            $dichVuIds = [];
-            $maCongTo = [];
-            $chiSoDau = [];
-            $ngayTinhPhi = [];
-            
-            // Xử lý khách hàng - hỗ trợ nhiều định dạng dữ liệu từ frontend
-            if ($request->has('khach_hang_ids')) {
-                $khachHangIds = $request->input('khach_hang_ids');
-            } elseif ($request->has('KhachHangs')) {
-                $khachHangs = $request->input('KhachHangs');
-                if (is_array($khachHangs)) {
-                    foreach ($khachHangs as $khachHang) {
-                        if (is_array($khachHang)) {
-                            $khachHangIds[] = $khachHang['id'] ?? $khachHang['MaKhachHang'] ?? null;
-                        } else {
-                            $khachHangIds[] = $khachHang;
-                        }
-                    }
-                }
-            }
-            
-            // Xử lý dịch vụ - hỗ trợ nhiều định dạng dữ liệu từ frontend
-            if ($request->has('dich_vu_ids')) {
-                $dichVuIds = $request->input('dich_vu_ids');
-                $maCongTo = $request->input('ma_cong_to', []);
-                $chiSoDau = $request->input('chi_so_dau', []);
-                $ngayTinhPhi = $request->input('ngay_tinh_phi', []);
-            } elseif ($request->has('DichVus')) {
-                $dichVus = $request->input('DichVus');
-                if (is_array($dichVus)) {
-                    foreach ($dichVus as $index => $dichVu) {
-                        if (is_array($dichVu)) {
-                            $dichVuIds[] = $dichVu['id'] ?? $dichVu['MaDichVu'] ?? null;
-                            $maCongTo[] = $dichVu['MaCongTo'] ?? $dichVu['ma_cong_to'] ?? null;
-                            $chiSoDau[] = $dichVu['ChiSoDau'] ?? $dichVu['chi_so_dau'] ?? null;
-                            $ngayTinhPhi[] = $dichVu['NgayTinhPhi'] ?? $dichVu['ngay_tinh_phi'] ?? null;
-                        } else {
-                            $dichVuIds[] = $dichVu;
-                        }
-                    }
-                }
-            }
-            
-            // Lọc bỏ các giá trị null hoặc rỗng
-            $khachHangIds = array_filter($khachHangIds, function($id) { return !is_null($id) && $id !== ''; });
-            $dichVuIds = array_filter($dichVuIds, function($id) { return !is_null($id) && $id !== ''; });
-            
-            // Chuyển đổi các trường từ camelCase sang snake_case
-            $phongId = $request->input('MaPhongId') ?? $request->input('phong_id') ?? $hopDong->phong_id;
-            
-            // Xử lý các trường ngày tháng
-            $ngayBatDau = $this->formatDate($request->input('NgayBatDau') ?? $request->input('ngay_bat_dau'));
-            $ngayKetThuc = $this->formatDate($request->input('NgayKetThuc') ?? $request->input('ngay_ket_thuc'));
-            $ngayTinhTien = $this->formatDate($request->input('NgayTinhTien') ?? $request->input('ngay_tinh_tien'));
-            
-            // Các trường khác
-            $tienThue = $request->input('TienThue') ?? $request->input('tien_thue');
-            $tienCoc = $request->input('TienCoc') ?? $request->input('tien_coc');
-            $chuKyThanhToan = $request->input('ChuKyThanhToan') ?? $request->input('chu_ky_thanh_toan');
-            $trangThai = $request->input('TrangThai') ?? $request->input('trang_thai') ?? $hopDong->trang_thai;
-            
-            // Kiểm tra dữ liệu
-            if (empty($phongId)) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Mã phòng không được để trống'
-                ], 422);
-            }
-            
-            // Cập nhật hợp đồng
+            // 3. Update the contract using validated data
             $hopDong->update([
-                'phong_id' => $phongId,
-                'ngay_bat_dau' => $ngayBatDau,
-                'ngay_ket_thuc' => $ngayKetThuc,
-                'tien_thue' => $tienThue,
-                'tien_coc' => $tienCoc,
-                'chu_ky_thanh_toan' => $chuKyThanhToan,
-                'ngay_tinh_tien' => $ngayTinhTien,
-                'trang_thai' => $trangThai
+                'ma_hop_dong' => $data['MaHopDong'],
+                'phong_id' => $data['MaPhongId'],
+                'ngay_bat_dau' => $data['NgayBatDau'],
+                'ngay_ket_thuc' => $data['NgayKetThuc'],
+                'tien_thue' => $data['TienThue'] ?? 0,
+                'tien_coc' => $data['TienCoc'] ?? 0,
+                'chu_ky_thanh_toan' => $data['ChuKyThanhToan'] ?? 1,
+                'ngay_tinh_tien' => $data['NgayTinhTien'],
+                'trang_thai' => $data['TrangThai'] ?? 'Còn hạn',
             ]);
 
-            // Cập nhật khách hàng trong hợp đồng
-            if (!empty($khachHangIds)) {
-                $hopDong->khachHangs()->sync($khachHangIds);
-            }
+            // 4. Sync customers
+            $khachHangIds = collect($data['KhachHangs'])->pluck('id')->all();
+            $hopDong->khachHangs()->sync($khachHangIds);
 
-            // Cập nhật dịch vụ trong hợp đồng
+            // 5. Prepare and sync services
             $dichVuData = [];
-            foreach ($dichVuIds as $index => $dichVuId) {
-                $dichVuData[$dichVuId] = [
-                    'ma_cong_to' => $maCongTo[$index] ?? null,
-                    'chi_so_dau' => $chiSoDau[$index] ?? null,
-                    'ngay_tinh_phi' => isset($ngayTinhPhi[$index]) ? $this->formatDate($ngayTinhPhi[$index]) : null
-                ];
+            if (!empty($data['DichVus']) && is_array($data['DichVus'])) {
+                foreach ($data['DichVus'] as $dichVu) {
+                    if (!empty($dichVu['id'])) {
+                        $dichVuData[$dichVu['id']] = [
+                            'ma_cong_to' => $dichVu['MaCongTo'] ?? null,
+                            'chi_so_dau' => $dichVu['ChiSoDau'] ?? null,
+                            'ngay_tinh_phi' => $this->normalizeDateToYMD($dichVu['NgayTinhPhi'] ?? null),
+                        ];
+                    }
+                }
             }
-            if (!empty($dichVuData)) {
-                $hopDong->phiDichVus()->sync($dichVuData);
-            }
+            $hopDong->phiDichVus()->sync($dichVuData);
 
+            DB::commit();
+
+            // 6. Return the updated and formatted contract
             $hopDong->load(['phong.toaNha', 'khachHangs', 'phiDichVus']);
             return response()->json($this->formatHopDong($hopDong));
+
         } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Lỗi khi cập nhật hợp đồng: ' . $e->getMessage());
             return response()->json([
                 'status' => 'error',
                 'message' => 'Có lỗi xảy ra khi cập nhật hợp đồng: ' . $e->getMessage()
@@ -238,15 +207,38 @@ class HopDongController extends Controller
         }
     }
 
-    public function destroy(HopDong $hopDong): JsonResponse
+    public function destroy($id): JsonResponse
     {
+        DB::beginTransaction();
         try {
+            $hopDong = HopDong::with('hoaDons')->findOrFail($id);
+
+            // Kiểm tra xem hợp đồng đã có hóa đơn chưa
+            if ($hopDong->hoaDons()->exists()) {
+                DB::rollBack();
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Không thể xóa hợp đồng đã có hóa đơn. Vui lòng xóa các hóa đơn liên quan trước.'
+                ], 400); // 400 Bad Request
+            }
+
+            // Xóa các bản ghi liên quan trong bảng hop_dong_khach_hang
+            $hopDong->khachHangs()->detach();
+
+            // Xóa các bản ghi liên quan trong bảng hop_dong_phi_dich_vu
+            $hopDong->phiDichVus()->detach();
+
             $hopDong->delete();
+
+            DB::commit();
+
             return response()->json([
                 'status' => 'success',
                 'message' => 'Xóa hợp đồng thành công'
-            ], 200);
+            ]);
         } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Lỗi khi xóa hợp đồng: ' . $e->getMessage());
             return response()->json([
                 'status' => 'error',
                 'message' => 'Có lỗi xảy ra khi xóa hợp đồng: ' . $e->getMessage()
