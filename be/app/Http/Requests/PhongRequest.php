@@ -13,8 +13,11 @@ class PhongRequest extends FormRequest
 
     public function rules()
     {
+        $phongId = $this->route('phong'); // Lấy id trực tiếp từ route
+
         return [
-            'MaPhong' => 'required|string|max:50',
+            // Khi cập nhật, bỏ qua check unique cho chính phòng đó
+            'MaPhong' => 'required|string|max:50|unique:phongs,ma_phong,' . $phongId,
             'TenNha' => 'required|string|max:255',
             'TenPhong' => 'required|string|max:255',
             'Tang' => 'required|string|max:50',

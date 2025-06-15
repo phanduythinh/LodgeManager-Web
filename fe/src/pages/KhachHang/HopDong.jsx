@@ -516,8 +516,8 @@ function HopDong() {
   };
 
   const validateForm = () => {
-    const requiredFields = ['MaHopDong', 'NgayBatDau', 'NgayKetThuc', 'TienThue', 'NgayTinhTien', 'MaNhaId', 'MaPhongId', 'ChuKyThanhToan']
-    const newErrors = {}
+    const requiredFields = ['MaHopDong', 'NgayBatDau', 'NgayKetThuc', 'TienThue', 'NgayTinhTien', 'MaNhaId', 'MaPhongId', 'ChuKyThanhToan'];
+    const newErrors = {};
 
     requiredFields.forEach(field => {
       if (!formData[field] ||
@@ -525,101 +525,82 @@ function HopDong() {
         (Array.isArray(formData[field]) && formData[field].length === 0)) {
         newErrors[field] = 'Thông tin bắt buộc';
       }
-    })
+    });
     if (khachHangDuocChon.length === 0) {
       newErrors.KhachHangs = 'Cần thêm ít nhất một khách hàng';
     }
     if (dichVuDuocChon.length === 0) {
       newErrors.DichVus = 'Cần thêm ít nhất một dịch vụ';
     }
-    
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = async () => {
     if (!validateForm()) return;
 
+    setLoading(true);
+
+    // 1. Find the selected room to get its numeric ID
+    const selectedPhong = listPhong.find(p => p.MaPhong === formData.MaPhongId);
+    if (!selectedPhong) {
+      setErrors(prev => ({ ...prev, MaPhongId: 'Vui lòng chọn phòng hợp lệ.' }));
+      setLoading(false);
+      return;
+    }
+
+    // 2. Build the payload with the correct structure and data types
+    const payload = {
+      MaHopDong: formData.MaHopDong,
+      MaPhongId: selectedPhong.id, // Send the numeric ID
+      NgayBatDau: formData.NgayBatDau ? dayjs(formData.NgayBatDau).format('YYYY-MM-DD') : null,
+      NgayKetThuc: formData.NgayKetThuc ? dayjs(formData.NgayKetThuc).format('YYYY-MM-DD') : null,
+      TienThue: formData.TienThue,
+      TienCoc: formData.TienCoc,
+      ChuKyThanhToan: formData.ChuKyThanhToan,
+      NgayTinhTien: formData.NgayTinhTien ? dayjs(formData.NgayTinhTien).format('YYYY-MM-DD') : null,
+      TrangThai: formData.TrangThai || 'Còn hạn',
+      KhachHangs: khachHangDuocChon.map(kh => ({ id: kh.id })), // Array of objects with id
+      DichVus: dichVuDuocChon.map(dv => ({
+        id: dv.id,
+        MaCongTo: dv.MaCongTo || null,
+        ChiSoDau: dv.ChiSoDau || null,
+        NgayTinhPhi: dv.NgayTinhPhi ? dayjs(dv.NgayTinhPhi).format('YYYY-MM-DD') : null
+      }))
+    };
+
     try {
-      setLoading(true);
-      const selectedToaNha = listToaNha.find(n => n.MaNha === formData.MaNhaId)
-      const selectedPhong = listPhong.find(p => p.MaPhong === formData.MaPhongId)
-
-      // Chuẩn bị dữ liệu để gửi đến backend
-      const hopDongData = {
-        MaHopDong: formData.MaHopDong,
-        MaPhongId: formData.MaPhongId, // Gửi MaPhongId thay vì phong_id
-        MaNhaId: formData.MaNhaId, // Gửi MaNhaId
-        TenNha: selectedToaNha ? selectedToaNha.TenNha : '',
-        TenPhong: selectedPhong ? selectedPhong.TenPhong : '',
-        NgayBatDau: formData.NgayBatDau && formData.NgayBatDau.format
-          ? formData.NgayBatDau.format('DD/MM/YYYY')
-          : formData.NgayBatDau,
-        NgayKetThuc: formData.NgayKetThuc && formData.NgayKetThuc.format
-          ? formData.NgayKetThuc.format('DD/MM/YYYY')
-          : formData.NgayKetThuc,
-        NgayTinhTien: formData.NgayTinhTien && formData.NgayTinhTien.format
-          ? formData.NgayTinhTien.format('DD/MM/YYYY')
-          : formData.NgayTinhTien,
-        TienThue: formData.TienThue,
-        TienCoc: formData.TienCoc,
-        ChuKyThanhToan: formData.ChuKyThanhToan,
-        TrangThai: 'Còn hạn', // Mặc định trạng thái là 'Còn hạn' khi thêm hoặc sửa
-        khach_hang_ids: khachHangDuocChon.map(kh => kh.id || kh.MaKhachHang), // Gửi dưới dạng khach_hang_ids để backend xử lý đúng
-        dich_vu_ids: dichVuDuocChon.map(dv => dv.id || dv.MaDichVu),
-        ma_cong_to: dichVuDuocChon.map(dv => dv.MaCongTo || ''),
-        chi_so_dau: dichVuDuocChon.map(dv => dv.ChiSoDau || ''),
-        ngay_tinh_phi: dichVuDuocChon.map(dv => dv.NgayTinhPhi || '') // Gửi dưới dạng snake_case để backend xử lý đúng
-      };
-
-      console.log('Dữ liệu gửi đến backend:', hopDongData);
-
       let response;
       if (editId === null) {
-        // Kiểm tra trùng mã hợp đồng khi thêm mới
-        const isDuplicate = rows.some(r => r.MaHopDong === hopDongData.MaHopDong);
-        if (isDuplicate) {
-          setErrors(prev => ({
-            ...prev,
-            MaHopDong: 'Mã hợp đồng đã tồn tại'
-          }));
-          setLoading(false);
-          return;
-        }
-
-        // Gọi API để thêm mới hợp đồng
-        response = await hopDongService.create(hopDongData);
-        console.log('Kết quả thêm mới hợp đồng:', response);
-        
-        setSnackbar({
-          open: true,
-          message: 'Thêm hợp đồng thành công',
-          severity: 'success'
-        });
+        response = await hopDongService.create(payload);
+        setSnackbar({ open: true, message: 'Thêm hợp đồng thành công', severity: 'success' });
       } else {
-        // Gọi API để cập nhật hợp đồng
-        response = await hopDongService.update(editId, hopDongData);
-        console.log('Kết quả cập nhật hợp đồng:', response);
-        
-        setSnackbar({
-          open: true,
-          message: 'Cập nhật hợp đồng thành công',
-          severity: 'success'
-        });
+        response = await hopDongService.update(editId, payload);
+        setSnackbar({ open: true, message: 'Cập nhật hợp đồng thành công', severity: 'success' });
       }
 
-      // Tải lại danh sách hợp đồng sau khi thêm/sửa
       await fetchHopDong();
-      
-      setOpen(false);
-      handleClose(); // Gọi handleClose để reset toàn bộ form và state
+      handleClose();
+
     } catch (error) {
-      console.error('Lỗi khi lưu hợp đồng:', error);
-      setSnackbar({
-        open: true,
-        message: `Lỗi khi ${editId === null ? 'thêm' : 'cập nhật'} hợp đồng: ${error.message || 'Không xác định'}`,
-        severity: 'error'
-      });
+      console.error('Lỗi khi lưu hợp đồng:', error.response?.data || error);
+      
+      // Enhanced error handling to display backend validation messages
+      if (error.response && error.response.status === 422) {
+        const backendErrors = error.response.data.errors;
+        const newErrors = {};
+        for (const field in backendErrors) {
+          // Map backend field names to frontend state names if they differ
+          // Example: MaPhongId -> MaPhongId
+          const frontendField = field.charAt(0).toUpperCase() + field.slice(1);
+          newErrors[frontendField] = backendErrors[field].join(' ');
+        }
+        setErrors(prev => ({ ...prev, ...newErrors }));
+        setSnackbar({ open: true, message: 'Dữ liệu không hợp lệ, vui lòng kiểm tra lại các trường báo lỗi.', severity: 'error' });
+      } else {
+        const errorMessage = error.response?.data?.message || error.message || 'Đã xảy ra lỗi không xác định.';
+        setSnackbar({ open: true, message: `Lỗi: ${errorMessage}`, severity: 'error' });
+      }
     } finally {
       setLoading(false);
     }
@@ -654,20 +635,20 @@ function HopDong() {
   };
 
   const listChuKyThanhToan = [
-    { title: '1 tháng' },
-    { title: '2 tháng' },
-    { title: '3 tháng' },
-    { title: '4 tháng' },
-    { title: '5 tháng' },
-    { title: '6 tháng' },
-    { title: '7 tháng' },
-    { title: '8 tháng' },
-    { title: '9 tháng' },
-    { title: '10 tháng' },
-    { title: '11 tháng' },
-    { title: '1 năm' },
-    { title: '2 năm' },
-    { title: '3 năm' }
+    { title: '1 tháng', value: 1 },
+    { title: '2 tháng', value: 2 },
+    { title: '3 tháng', value: 3 },
+    { title: '4 tháng', value: 4 },
+    { title: '5 tháng', value: 5 },
+    { title: '6 tháng', value: 6 },
+    { title: '7 tháng', value: 7 },
+    { title: '8 tháng', value: 8 },
+    { title: '9 tháng', value: 9 },
+    { title: '10 tháng', value: 10 },
+    { title: '11 tháng', value: 11 },
+    { title: '1 năm', value: 12 },
+    { title: '2 năm', value: 24 },
+    { title: '3 năm', value: 36 }
   ]
 
   const listTrangThai = [
@@ -904,11 +885,10 @@ function HopDong() {
                   <Autocomplete
                     sx={{ width: 'calc(520.67px/2)' }}
                     disablePortal={false}
-                    PopperComponent={(props) => <Popper {...props} disablePortal={false} />}
                     options={listChuKyThanhToan}
                     getOptionLabel={(option) => option.title || ''}
-                    value={listChuKyThanhToan.find(t => t.title === formData.ChuKyThanhToan) || null}
-                    onChange={(e, value) => handleAutoChange('ChuKyThanhToan', value?.title || '')}
+                    value={listChuKyThanhToan.find(c => c.value === formData.ChuKyThanhToan) || null}
+                    onChange={(e, value) => handleAutoChange('ChuKyThanhToan', value?.value || '')}
                     renderInput={(params) => (
                       <TextField
                         {...params}

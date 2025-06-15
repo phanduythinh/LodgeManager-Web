@@ -109,30 +109,27 @@ class PhiDichVuController extends Controller
         try {
             DB::beginTransaction();
 
-            // Tìm phi dịch vụ theo ID hoặc MaDichVu
-            $phiDichVu = is_numeric($id) ? PhiDichVu::findOrFail($id) : PhiDichVu::where('ma_dich_vu', $id)->firstOrFail();
-            
-            // Lấy ID của tòa nhà dựa trên TenNha
-            $toaNha = DB::table('toa_nhas')->where('ten_nha', $request->TenNha)->first();
-            
-            if (!$toaNha) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Không tìm thấy tòa nhà với tên: ' . $request->TenNha
-                ], 422);
+            $phiDichVu = PhiDichVu::findOrFail($id);
+
+            // Kiểm tra và lấy ID tòa nhà
+            if ($request->has('TenNha')) {
+                $toaNha = DB::table('toa_nhas')->where('ten_nha', $request->TenNha)->first();
+                if (!$toaNha) {
+                    return response()->json(['status' => 'error', 'message' => 'Tòa nhà không tồn tại'], 422);
+                }
+                $phiDichVu->toa_nha_id = $toaNha->id;
+            } else if ($request->has('ToaNhaId')) {
+                $phiDichVu->toa_nha_id = $request->ToaNhaId;
             }
+
+            // Cập nhật các trường khác
+            $phiDichVu->ma_dich_vu = $request->MaDichVu;
+            $phiDichVu->ten_dich_vu = $request->TenDichVu;
+            $phiDichVu->loai_dich_vu = $request->LoaiDichVu;
+            $phiDichVu->don_gia = $request->DonGia;
+            $phiDichVu->don_vi_tinh = $request->DonViTinh;
             
-            // Chuyển đổi dữ liệu từ frontend sang định dạng database
-            $phiDichVuData = [
-                'ma_dich_vu' => $request->MaDichVu,
-                'ten_dich_vu' => $request->TenDichVu,
-                'loai_dich_vu' => $request->LoaiDichVu,
-                'don_gia' => $request->DonGia,
-                'don_vi_tinh' => $request->DonViTinh,
-                'toa_nha_id' => $toaNha->id
-            ];
-            
-            $phiDichVu->update($phiDichVuData);
+            $phiDichVu->save();
 
             DB::commit();
 
@@ -158,7 +155,6 @@ class PhiDichVuController extends Controller
 
             $phiDichVu = PhiDichVu::findOrFail($id);
 
-            // Kiểm tra xem phí dịch vụ có đang được sử dụng trong hóa đơn không
             if ($phiDichVu->chiTietHoaDons()->exists()) {
                 return response()->json([
                     'status' => 'error',
@@ -179,7 +175,7 @@ class PhiDichVuController extends Controller
             Log::error('Lỗi khi xóa phí dịch vụ: ' . $e->getMessage());
             return response()->json([
                 'status' => 'error',
-                'message' => 'Có lỗi xảy ra khi xóa phí dịch vụ'
+                'message' => 'Có lỗi xảy ra khi xóa phí dịch vụ: ' . $e->getMessage()
             ], 500);
         }
     }

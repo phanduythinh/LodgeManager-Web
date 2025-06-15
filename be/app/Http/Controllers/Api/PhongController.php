@@ -181,13 +181,14 @@ class PhongController extends Controller
         try {
             DB::beginTransaction();
 
+            // Tìm phòng theo ID để xóa
             $phong = Phong::findOrFail($id);
 
-            // Kiểm tra nếu phòng đang có hợp đồng
-            if ($phong->hopDong && $phong->hopDong->trang_thai === 'dang_thue') {
+            // Kiểm tra nếu phòng đang có hợp đồng đang thuê
+            if ($phong->hopDongs()->where('trang_thai', 'dang_thue')->exists()) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'Không thể xóa phòng đang có hợp đồng thuê'
+                    'message' => 'Không thể xóa phòng đang có hợp đồng thuê đang hoạt động'
                 ], 400);
             }
 
@@ -199,12 +200,18 @@ class PhongController extends Controller
                 'status' => 'success',
                 'message' => 'Xóa phòng thành công'
             ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            DB::rollBack();
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Không tìm thấy phòng để xóa.'
+            ], 404);
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Lỗi khi xóa phòng: ' . $e->getMessage());
             return response()->json([
                 'status' => 'error',
-                'message' => 'Có lỗi xảy ra khi xóa phòng'
+                'message' => 'Có lỗi xảy ra khi xóa phòng: ' . $e->getMessage()
             ], 500);
         }
     }

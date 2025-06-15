@@ -97,11 +97,26 @@ function PhiDichVu() {
       })
     } catch (error) {
       console.error('Lỗi khi xóa phí dịch vụ:', error)
-      setSnackbar({
-        open: true,
-        message: 'Không thể xóa phí dịch vụ',
-        severity: 'error'
-      })
+      if (error.response && error.response.status === 422) {
+        // Lỗi validation từ backend
+        const errorData = {}
+        for (const key in error.response.data.errors) {
+          errorData[key] = error.response.data.errors[key][0]
+        }
+        setErrors(errorData)
+        setSnackbar({
+          open: true,
+          message: 'Dữ liệu không hợp lệ, vui lòng kiểm tra lại!',
+          severity: 'error'
+        })
+      } else {
+        // Các lỗi khác
+        setSnackbar({
+          open: true,
+          message: error.response?.data?.message || 'Không thể xóa phí dịch vụ',
+          severity: 'error'
+        })
+      }
     } finally {
       setLoading(false)
     }
@@ -168,32 +183,41 @@ function PhiDichVu() {
 
     try {
       setLoading(true)
-      if (editIndex === null) {
-        // Create new service
-        await phiDichVuService.create(formData)
-        setSnackbar({
-          open: true,
-          message: 'Thêm phí dịch vụ thành công',
-          severity: 'success'
-        })
+      const message = editIndex !== null ? 'Cập nhật phí dịch vụ thành công' : 'Thêm mới phí dịch vụ thành công';
+      if (editIndex !== null) {
+        await phiDichVuService.update(formData.id, formData)
       } else {
-        // Update existing service
-        await phiDichVuService.update(formData.MaDichVu, formData)
-        setSnackbar({
-          open: true,
-          message: 'Cập nhật phí dịch vụ thành công',
-          severity: 'success'
-        })
+        await phiDichVuService.create(formData)
       }
       await fetchPhiDichVu()
-      setOpen(false)
-    } catch (error) {
-      console.error('Lỗi khi lưu phí dịch vụ:', error)
+      handleClose()
       setSnackbar({
         open: true,
-        message: 'Không thể lưu phí dịch vụ',
-        severity: 'error'
+        message: message,
+        severity: 'success'
       })
+    } catch (error) {
+      console.error('Lỗi khi lưu phí dịch vụ:', error)
+      if (error.response && error.response.status === 422) {
+        // Lỗi validation từ backend
+        const errorData = {}
+        for (const key in error.response.data.errors) {
+          errorData[key] = error.response.data.errors[key][0]
+        }
+        setErrors(errorData)
+        setSnackbar({
+          open: true,
+          message: 'Dữ liệu không hợp lệ, vui lòng kiểm tra lại!',
+          severity: 'error'
+        })
+      } else {
+        // Các lỗi khác
+        setSnackbar({
+          open: true,
+          message: error.response?.data?.message || 'Không thể lưu phí dịch vụ',
+          severity: 'error'
+        })
+      }
     } finally {
       setLoading(false)
     }
@@ -202,11 +226,11 @@ function PhiDichVu() {
   const handleDeleteConfirm = (row) => {
     confirm({
       title: 'Xóa dịch vụ',
-      description: `Bạn chắc chắn muốn xóa dịch vụ ${row.MaDichVu}?`,
+      description: `Bạn chắc chắn muốn xóa dịch vụ ${row.TenDichVu}?`,
       confirmationText: 'Xóa',
       cancellationText: 'Hủy'
     }).then(() => {
-      handleDelete(row.MaDichVu)
+      handleDelete(row.id)
     }).catch(() => { })
   }
 
@@ -454,7 +478,10 @@ function PhiDichVu() {
               ) : (
                 filteredRows.map((row, index) => (
                   <StyledTableRow key={row.MaDichVu}>
-                    <StyledTableCell sx={{ p: '8px' }}>{row.MaDichVu}</StyledTableCell>
+                    <StyledTableCell sx={{ p: '8px' }}>
+                      {row.MaDichVu}
+                      <Box sx={{ color: '#B9B9C3' }}>ID: {row.id}</Box>
+                    </StyledTableCell>
                     <StyledTableCell sx={{ p: '8px' }}>
                       {row.TenDichVu}
                       <Box sx={{ color: '#B9B9C3' }}>Tòa nhà: {row.TenNha}</Box>

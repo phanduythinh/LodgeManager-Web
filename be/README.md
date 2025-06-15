@@ -1,118 +1,119 @@
-# Lodge Manager Backend
+# Lodge Manager - Backend
 
-Backend API cho ứng dụng Lodge Manager được xây dựng bằng Laravel.
+Phần backend của ứng dụng Lodge Manager, được xây dựng trên nền tảng Laravel. Cung cấp các API để quản lý tòa nhà, phòng, hợp đồng, và các dịch vụ liên quan.
 
-## Yêu cầu
+## Yêu Cầu Hệ Thống
 
--   PHP >= 8.1
--   Composer
--   MySQL >= 5.7
--   Node.js & NPM
+- PHP 8.1 trở lên
+- Composer 2.0 trở lên
+- SQLite (đã tích hợp sẵn)
 
-## Cài đặt
+## Hướng Dẫn Cài Đặt
 
-1. Clone repository:
-
-```bash
-git clone <repository-url>
-cd be
-```
-
-2. Cài đặt dependencies:
+### 1. Cài đặt môi trường
 
 ```bash
+# Clone dự án (nếu chưa có)
+git clone https://github.com/phanduythinh/LodgeManager-Web.git
+
+# Di chuyển vào thư mục backend
+cd LodgeManager-Web/be
+
+# Cài đặt các thư viện PHP cần thiết
 composer install
 ```
 
-3. Tạo file .env:
+### 2. Cấu hình môi trường
 
 ```bash
+# Sao chép file cấu hình
 cp .env.example .env
-```
 
-4. Tạo application key:
-
-```bash
+# Tạo key ứng dụng
 php artisan key:generate
+
+# Tạo file database SQLite
+type nul > database\database.sqlite  # Windows
+# hoặc
+# touch database/database.sqlite    # macOS/Linux
 ```
 
-5. Cấu hình database trong file .env:
+### 3. Cấu hình cơ sở dữ liệu
 
-```bash
+Mở file `.env` và cập nhật các thông số kết nối:
+
+```
 DB_CONNECTION=sqlite
-# DB_HOST=127.0.0.1
-# DB_PORT=3306
-# DB_DATABASE=lodge_manager
-# DB_USERNAME=root
-# DB_PASSWORD=
+DB_DATABASE=/đường/dẫn/đến/LodgeManager-Web/be/database/database.sqlite
 ```
 
-6. Chạy migrations:
+### 4. Chạy migrations và seed dữ liệu mẫu
 
 ```bash
-php artisan migrate
+php artisan migrate --seed
 ```
 
-7. Chạy seeders (nếu cần):
-
-```bash
-php artisan db:seed
-```
-
-8. Khởi động server:
+### 5. Khởi động server
 
 ```bash
 php artisan serve
 ```
 
+Server sẽ chạy tại: http://127.0.0.1:8000
+
 ## API Endpoints
 
-### Resources
+- `GET /api/toa-nha`: Lấy danh sách tòa nhà
+- `GET /api/phong`: Lấy danh sách phòng
+- `GET /api/khach-hang`: Lấy danh sách khách hàng
+- `GET /api/hop-dong`: Lấy danh sách hợp đồng
 
--   GET /api/buildings - Lấy danh sách tòa nhà
--   POST /api/buildings - Tạo tòa nhà mới
--   GET /api/buildings/{id} - Lấy thông tin tòa nhà
--   PUT /api/buildings/{id} - Cập nhật tòa nhà
--   DELETE /api/buildings/{id} - Xóa tòa nhà
+## Xử lý lỗi thường gặp
 
-(Tương tự cho các resource khác: rooms, contracts, customers, invoices, services)
+### 1. Lỗi cơ sở dữ liệu
+- **Triệu chứng:** Lỗi khi chạy migrations hoặc truy vấn
+- **Cách khắc phục:**
+  ```bash
+  # Xóa file cũ (nếu có)
+  rm database/database.sqlite
+  
+  # Tạo file mới
+  type nul > database\database.sqlite  # Windows
+  # hoặc
+  # touch database/database.sqlite    # macOS/Linux
+  
+  # Chạy lại migrations
+  php artisan migrate --seed
+  ```
 
-## Kết nối với Frontend
+### 2. Lỗi CORS
+- **Triệu chứng:** Không thể gọi API từ frontend
+- **Cách khắc phục:**
+  - Kiểm tra file `config/cors.php`
+  - Đảm bảo đã thêm domain của frontend vào `allowed_origins`
+  - Mặc định đã hỗ trợ `http://localhost:5173`
 
-1. Cấu hình CORS trong `config/cors.php`:
+### 3. Lỗi thiếu thư viện
+- **Triệu chứng:** Lỗi khi chạy lệnh `composer install`
+- **Cách khắc phục:**
+  ```bash
+  # Xóa thư mục vendor và file composer.lock
+  rm -r vendor
+  rm composer.lock
+  
+  # Cài đặt lại
+  composer install
+  ```
 
-```php
-'allowed_origins' => ['http://localhost:3000'], // URL của frontend React
-```
-
-2. Cấu hình Sanctum trong `config/sanctum.php`:
-
-```php
-'stateful' => explode(',', env('SANCTUM_STATEFUL_DOMAINS', 'localhost,localhost:3000')),
-```
-
-3. Trong frontend React, sử dụng axios để gọi API:
-
-```javascript
-import axios from "axios";
-
-const api = axios.create({
-    baseURL: "http://localhost:8000/api",
-    withCredentials: true,
-});
-
-// Thêm token vào header
-api.interceptors.request.use((config) => {
-    const token = localStorage.getItem("token");
-    if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-});
-```
-
-## Testing
+## Chạy kiểm thử
 
 ```bash
 php artisan test
 ```
+
+## Kết nối với Frontend
+
+Để kết nối với frontend React:
+1. Đảm bảo frontend đang chạy trên port 5173
+2. Backend mặc định đã hỗ trợ CORS cho `http://localhost:5173`
+3. Trong file cấu hình frontend, đặt `VITE_API_BASE_URL=http://localhost:8000/api`

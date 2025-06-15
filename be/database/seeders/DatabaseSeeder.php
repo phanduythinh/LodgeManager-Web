@@ -204,9 +204,13 @@ class DatabaseSeeder extends Seeder
                 'ngay_tinh_phi' => '2024-01-01'
             ],
             $dichVu4->id => [
+                'ma_cong_to' => null,
+                'chi_so_dau' => null,
                 'ngay_tinh_phi' => '2024-01-01'
             ],
             $dichVu5->id => [
+                'ma_cong_to' => null,
+                'chi_so_dau' => null,
                 'ngay_tinh_phi' => '2024-01-01'
             ]
         ]);
