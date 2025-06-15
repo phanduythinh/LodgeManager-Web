@@ -48,13 +48,13 @@ function KhachHang() {
     setProvinces(getProvinces())
     fetchKhachHang()
   }, [])
-  
+
   const fetchKhachHang = async () => {
     try {
       setLoading(true)
       const response = await khachHangService.getAll()
       console.log('KhachHang API response:', response) // Log toàn bộ response để debug
-      
+
       // Xử lý cả hai trường hợp: mảng trực tiếp hoặc object có thuộc tính data
       let data = [];
       if (Array.isArray(response)) {
@@ -62,7 +62,7 @@ function KhachHang() {
       } else if (response && Array.isArray(response.data)) {
         data = response.data;
       }
-      
+
       // Đảm bảo các trường có giá trị mặc định để tránh undefined
       const processedData = data.map(item => {
         // Chuẩn hóa dữ liệu từ backend (snake_case) sang frontend (camelCase)
@@ -86,10 +86,10 @@ function KhachHang() {
           QuanHuyen: item.QuanHuyen || item.quan_huyen || '',
           TinhThanh: item.TinhThanh || item.tinh_thanh || ''
         };
-        
+
         return normalizedItem;
       });
-      
+
       console.log('KhachHang processed data:', processedData) // Log dữ liệu đã xử lý
       setRows(processedData)
     } catch (error) {
@@ -105,40 +105,40 @@ function KhachHang() {
   }
 
   // Khi mở dialog sửa, set lại districts và wards theo TinhThanh và QuanHuyen hiện tại
-  const handleOpenEdit = (row) => {
-    setFormData({
-      ...row,
-      NgaySinh: row.NgaySinh ? dayjs(row.NgaySinh, 'DD/MM/YYYY') : null
-    })
-    setErrors({})
-    setEditId(row.MaKhachHang)
-    setOpen(true)
+  // const handleOpenEdit = (row) => {
+  //   setFormData({
+  //     ...row,
+  //     NgaySinh: row.NgaySinh ? dayjs(row.NgaySinh, 'DD/MM/YYYY') : null
+  //   })
+  //   setErrors({})
+  //   setEditId(row.MaKhachHang)
+  //   setOpen(true)
 
-    if (row.TinhThanh) {
-      const province = getProvinces().find(p => p.name === row.TinhThanh)
-      if (province) {
-        const dsDistricts = getDistrictsByProvinceCode(province.code)
-        setDistricts(dsDistricts)
+  //   if (row.TinhThanh) {
+  //     const province = getProvinces().find(p => p.name === row.TinhThanh)
+  //     if (province) {
+  //       const dsDistricts = getDistrictsByProvinceCode(province.code)
+  //       setDistricts(dsDistricts)
 
-        if (row.QuanHuyen) {
-          const district = dsDistricts.find(d => d.name === row.QuanHuyen)
-          if (district) {
-            setWards(getWardsByDistrictCode(district.code))
-          } else {
-            setWards([])
-          }
-        } else {
-          setWards([])
-        }
-      } else {
-        setDistricts([])
-        setWards([])
-      }
-    } else {
-      setDistricts([])
-      setWards([])
-    }
-  }
+  //       if (row.QuanHuyen) {
+  //         const district = dsDistricts.find(d => d.name === row.QuanHuyen)
+  //         if (district) {
+  //           setWards(getWardsByDistrictCode(district.code))
+  //         } else {
+  //           setWards([])
+  //         }
+  //       } else {
+  //         setWards([])
+  //       }
+  //     } else {
+  //       setDistricts([])
+  //       setWards([])
+  //     }
+  //   } else {
+  //     setDistricts([])
+  //     setWards([])
+  //   }
+  // }
 
   const handleOpenAdd = () => {
     setFormData({
@@ -206,9 +206,13 @@ function KhachHang() {
 
     requiredFields.forEach(field => {
       if (!formData[field] || formData[field].trim() === '') {
-        newErrors[field] = 'Thông tin bắt buộc'
+        newErrors[field] = 'Vui lòng nhập thông tin này'
       }
     })
+
+    if (!formData.NgaySinh) {
+      newErrors.NgaySinh = 'Vui lòng chọn ngày sinh'
+    }
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
@@ -219,14 +223,14 @@ function KhachHang() {
 
     try {
       setLoading(true);
-      
+
       // Tìm khách hàng hiện tại nếu đang cập nhật
       let currentCustomer = null;
       if (editId) {
         currentCustomer = rows.find(row => row.id === editId || row.MaKhachHang === editId);
         console.log('Dữ liệu khách hàng hiện tại:', currentCustomer);
       }
-      
+
       // Chuẩn bị dữ liệu để gửi đến backend
       // Đảm bảo giữ lại các trường cũ nếu không được nhập lại
       const baseData = {
@@ -244,7 +248,7 @@ function KhachHang() {
         quan_huyen: formData.QuanHuyen || (currentCustomer?.QuanHuyen || ''),
         tinh_thanh: formData.TinhThanh || (currentCustomer?.TinhThanh || '')
       };
-      
+
       // Nếu đang cập nhật, giữ lại ID để backend có thể tìm được bản ghi
       const khachHangData = editId ? {
         ...baseData,
@@ -252,7 +256,7 @@ function KhachHang() {
       } : baseData;
 
       console.log('Dữ liệu khách hàng gửi đến backend:', khachHangData);
-      
+
       let response;
       if (editId === null) {
         // Kiểm tra trùng mã khách hàng khi thêm mới
@@ -269,7 +273,7 @@ function KhachHang() {
         // Gọi API để thêm mới khách hàng
         response = await khachHangService.create(khachHangData);
         console.log('Kết quả thêm mới khách hàng:', response);
-        
+
         setSnackbar({
           open: true,
           message: 'Thêm khách hàng thành công',
@@ -280,11 +284,11 @@ function KhachHang() {
           // Log ID và dữ liệu trước khi gọi API
           console.log('ID khách hàng cần cập nhật:', editId);
           console.log('Dữ liệu gửi đi:', khachHangData);
-          
+
           // Gọi API để cập nhật khách hàng
           response = await khachHangService.update(editId, khachHangData);
           console.log('Kết quả cập nhật khách hàng:', response);
-          
+
           setSnackbar({
             open: true,
             message: 'Cập nhật khách hàng thành công',
@@ -304,7 +308,7 @@ function KhachHang() {
 
       // Tải lại danh sách khách hàng sau khi thêm/sửa
       await fetchKhachHang();
-      
+
       setOpen(false);
     } catch (error) {
       console.error('Lỗi khi lưu khách hàng:', error);
@@ -322,7 +326,7 @@ function KhachHang() {
     const customer = rows.find(row => row.MaKhachHang === id || row.id === id);
     if (customer) {
       console.log('Dữ liệu khách hàng gốc khi chỉnh sửa:', customer);
-      
+
       // Đảm bảo tất cả các trường có giá trị, giữ lại dữ liệu cũ khi cập nhật
       const customerData = {
         id: customer.id, // Đảm bảo có ID để cập nhật
@@ -339,30 +343,30 @@ function KhachHang() {
         TinhThanh: customer.TinhThanh || customer.tinh_thanh || '',
         GioiTinh: customer.GioiTinh || customer.gioi_tinh || 'Nam',
       };
-      
+
       // Chuyển đổi định dạng ngày tháng nếu cần
-      const ngaySinh = customer.NgaySinh ? 
-        (typeof customer.NgaySinh === 'string' ? 
-          dayjs(customer.NgaySinh) : 
-          dayjs(customer.NgaySinh)) : 
+      const ngaySinh = customer.NgaySinh ?
+        (typeof customer.NgaySinh === 'string' ?
+          dayjs(customer.NgaySinh) :
+          dayjs(customer.NgaySinh)) :
         customer.ngay_sinh ? dayjs(customer.ngay_sinh) : null;
-        
+
       setFormData({
         ...customerData,
         NgaySinh: ngaySinh
       });
-      
+
       // Lưu cả ID số và mã khách hàng để sử dụng khi cập nhật
       setEditId(customer.id || customer.MaKhachHang);
       setOpen(true);
-      
+
       // Cập nhật các dropdown địa chỉ
       if (customer.TinhThanh || customer.tinh_thanh) {
         const province = provinces.find(p => p.name === (customer.TinhThanh || customer.tinh_thanh));
         if (province) {
           const dsDistricts = getDistrictsByProvinceCode(province.code);
           setDistricts(dsDistricts);
-          
+
           if (customer.QuanHuyen || customer.quan_huyen) {
             const district = dsDistricts.find(d => d.name === (customer.QuanHuyen || customer.quan_huyen));
             if (district) {
@@ -371,7 +375,7 @@ function KhachHang() {
           }
         }
       }
-      
+
       console.log('Dữ liệu khách hàng đã xử lý khi chỉnh sửa:', customerData);
       console.log('ID khách hàng để cập nhật:', customer.id || customer.MaKhachHang);
     }
@@ -406,8 +410,8 @@ function KhachHang() {
     : []
 
   const listGioiTinh = [
-    { title: 'Nam' },
-    { title: 'Nữ' }
+    { title: 'nam' },
+    { title: 'nữ' }
   ]
 
   return (
@@ -534,18 +538,22 @@ function KhachHang() {
             <Grid item xs={6}>
               <LocalizationProvider dateAdapter={AdapterDayjs}>
                 <DatePicker
-                  label="Ngày sinh"
+                  label="Ngày sinh (*)"
                   value={formData.NgaySinh || null}
-                  onChange={(date) => setFormData(prev => ({ ...prev, NgaySinh: date }))}
+                  onChange={(date) => {
+                    setFormData(prev => ({ ...prev, NgaySinh: date }));
+                    if (date) {
+                      setErrors(prev => ({ ...prev, NgaySinh: '' }));
+                    }
+                  }}
                   format="DD/MM/YYYY"
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      fullWidth
-                      error={!!errors.NgaySinh}
-                      helperText={errors.NgaySinh}
-                    />
-                  )}
+                  slotProps={{
+                    textField: {
+                      fullWidth: true,
+                      error: !!errors.NgaySinh,
+                      helperText: errors.NgaySinh
+                    }
+                  }}
                 />
               </LocalizationProvider>
             </Grid>
@@ -674,6 +682,7 @@ function KhachHang() {
             <TableRow>
               <StyledTableCell>Mã KH</StyledTableCell>
               <StyledTableCell>Họ tên</StyledTableCell>
+              {/* <StyledTableCell>Giới tính</StyledTableCell> */}
               <StyledTableCell>SĐT</StyledTableCell>
               <StyledTableCell>Ngày sinh</StyledTableCell>
               <StyledTableCell>CMND/CCCD</StyledTableCell>
@@ -684,10 +693,14 @@ function KhachHang() {
           <TableBody>
             {filteredRows.map((row) => (
               <StyledTableRow key={row.MaKhachHang || row.id}>
-                <StyledTableCell sx={{ p: '8px' }}>{row.MaKhachHang}</StyledTableCell>
+                <StyledTableCell sx={{ p: '8px' }}>
+                  {row.MaKhachHang}
+                  <Box sx={{ color: '#B9B9C3' }}>ID: {row.id}</Box>
+                </StyledTableCell>
                 <StyledTableCell sx={{ p: '8px' }}>{row.HoTen}</StyledTableCell>
+                {/* <StyledTableCell sx={{ p: '8px' }}>{row.GioiTinh || row.gioi_tinh}</StyledTableCell> */}
                 <StyledTableCell sx={{ p: '8px' }}>{row.SoDienThoai}</StyledTableCell>
-                <StyledTableCell sx={{ p: '8px' }}>{row.NgaySinh}</StyledTableCell>
+                <StyledTableCell sx={{ p: '8px' }}>{row.NgaySinh ? new Date(row.NgaySinh).toLocaleDateString('vi-VN') : ''}</StyledTableCell>
                 <StyledTableCell sx={{ p: '8px' }}>{row.CCCD || row.cccd || row.CMND_CCCD || ''}</StyledTableCell>
                 <StyledTableCell sx={{ p: '8px' }}>
                   {[row.DiaChiNha || row.dia_chi_nha, row.XaPhuong || row.xa_phuong, row.QuanHuyen || row.quan_huyen, row.TinhThanh || row.tinh_thanh]
