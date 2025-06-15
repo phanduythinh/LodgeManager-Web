@@ -491,7 +491,10 @@ function ToaNha() {
               ) : (
                 filteredRows.map((row) => (
                   <StyledTableRow key={row.MaNha}>
-                    <StyledTableCell sx={{ p: '8px' }}>{row.MaNha}</StyledTableCell>
+                    <StyledTableCell sx={{ p: '8px' }}>
+                      {row.MaNha}
+                      <Box sx={{ color: '#B9B9C3' }}>ID: {row.id}</Box>
+                    </StyledTableCell>
                     <StyledTableCell sx={{ p: '8px' }}>{row.TenNha}</StyledTableCell>
                     <StyledTableCell sx={{ p: '8px' }}>{Array.isArray(row.Phongs) ? row.Phongs.length : 0}</StyledTableCell>
                     <StyledTableCell sx={{ p: '8px' }}>

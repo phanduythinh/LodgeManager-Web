@@ -35,21 +35,21 @@ function HopDong() {
     message: '',
     severity: 'success'
   });
-  
+
   // Thêm useEffect để tải dữ liệu khi component mount
   useEffect(() => {
     fetchHopDong();
     fetchToaNha();
     fetchKhachHang();
   }, []);
-  
+
   // Hàm tải dữ liệu hợp đồng từ API
   const fetchHopDong = async () => {
     try {
       setLoading(true);
       const response = await hopDongService.getAll();
       console.log('HopDong API response:', response); // Log toàn bộ response để debug
-      
+
       // Xử lý cả hai trường hợp: mảng trực tiếp hoặc object có thuộc tính data
       let data = [];
       if (Array.isArray(response)) {
@@ -57,14 +57,14 @@ function HopDong() {
       } else if (response && Array.isArray(response.data)) {
         data = response.data;
       }
-      
+
       // Kiểm tra xem mỗi hợp đồng có KhachHangs không, nếu không thì gán mảng rỗng
       data = data.map(item => ({
         ...item,
         KhachHangs: Array.isArray(item.KhachHangs) ? item.KhachHangs : [],
         DichVus: Array.isArray(item.DichVus) ? item.DichVus : []
       }));
-      
+
       console.log('HopDong processed data:', data); // Log dữ liệu đã xử lý
       setRows(data);
     } catch (error) {
@@ -78,25 +78,25 @@ function HopDong() {
       setLoading(false);
     }
   };
-  
+
   // Hàm tải danh sách tòa nhà từ API
   const fetchToaNha = async () => {
     try {
       const response = await toaNhaService.getAll();
-      const data = Array.isArray(response) ? response : 
-                  (response && Array.isArray(response.data)) ? response.data : [];
+      const data = Array.isArray(response) ? response :
+        (response && Array.isArray(response.data)) ? response.data : [];
       setListToaNha(data);
     } catch (error) {
       console.error('Lỗi khi lấy danh sách tòa nhà:', error);
     }
   };
-  
+
   // Hàm tải danh sách khách hàng từ API
   const fetchKhachHang = async () => {
     try {
       const response = await khachHangService.getAll();
-      const data = Array.isArray(response) ? response : 
-                  (response && Array.isArray(response.data)) ? response.data : [];
+      const data = Array.isArray(response) ? response :
+        (response && Array.isArray(response.data)) ? response.data : [];
       setDanhSachKhachHang(data);
     } catch (error) {
       console.error('Lỗi khi lấy danh sách khách hàng:', error);
@@ -155,11 +155,11 @@ function HopDong() {
   const handleAddKhachHang = () => {
     const khachDuocThem = danhSachKhachHang.filter(kh => selectedKhachHangs.includes(kh.MaKhachHang));
     setKhachHangDuocChon(khachDuocThem);
-  
+
     // Lưu toàn bộ đối tượng khách hàng để có thể hiển thị đúng trong giao diện
     // Nhưng chỉ gửi id và MaKhachHang đến backend để xử lý
     console.log('Khách hàng được chọn:', khachDuocThem);
-  
+
     setFormData(prev => ({
       ...prev,
       KhachHangs: khachDuocThem
@@ -176,21 +176,21 @@ function HopDong() {
   }
   // Lấy danh sách dịch vụ từ tòa nhà được chọn
   const [dichVusTuToaNha, setDichVusTuToaNha] = useState([])
-  
+
   // Fetch dịch vụ của tòa nhà khi MaNhaId thay đổi
   useEffect(() => {
     if (formData.MaNhaId) {
       fetchDichVuByToaNha(formData.MaNhaId);
     }
   }, [formData.MaNhaId])
-  
+
   const fetchDichVuByToaNha = async (maNha) => {
     try {
       setLoading(true);
       console.log('Fetching services for building:', maNha);
       const response = await phiDichVuService.getAll();
       console.log('Dịch vụ API response:', response);
-      
+
       // Xử lý cả hai trường hợp: mảng trực tiếp hoặc object có thuộc tính data
       let data = [];
       if (Array.isArray(response)) {
@@ -198,17 +198,17 @@ function HopDong() {
       } else if (response && Array.isArray(response.data)) {
         data = response.data;
       }
-      
+
       // Lọc dịch vụ theo tòa nhà - kiểm tra cả MaNhaId và ToaNhaId
-      const dichVuCuaToaNha = data.filter(dv => 
-        (dv.MaNhaId && dv.MaNhaId.toString() === maNha.toString()) || 
+      const dichVuCuaToaNha = data.filter(dv =>
+        (dv.MaNhaId && dv.MaNhaId.toString() === maNha.toString()) ||
         (dv.ToaNhaId && dv.ToaNhaId.toString() === maNha.toString()) ||
         (dv.MaNha && dv.MaNha.toString() === maNha.toString())
       );
-      
+
       console.log('Dịch vụ của tòa nhà:', dichVuCuaToaNha);
       setDichVusTuToaNha(dichVuCuaToaNha);
-      
+
       // Nếu không có dịch vụ nào, hiển thị thông báo
       if (dichVuCuaToaNha.length === 0) {
         console.warn('Không tìm thấy dịch vụ nào cho tòa nhà này');
@@ -271,7 +271,7 @@ function HopDong() {
         // Tải lại danh sách khách hàng để đảm bảo có dữ liệu mới nhất
         const response = await khachHangService.getAll();
         console.log('Response từ khachHangService.getAll():', response);
-        
+
         // Xử lý cả hai trường hợp: mảng trực tiếp hoặc object có thuộc tính data
         let khachHangList = [];
         if (Array.isArray(response)) {
@@ -282,16 +282,16 @@ function HopDong() {
           console.error('Dữ liệu khách hàng không đúng định dạng:', response);
           khachHangList = [];
         }
-        
+
         setDanhSachKhachHang(khachHangList);
-        
+
         // Đảm bảo khách hàng trong hợp đồng có đầy đủ thông tin
         let khachHangDayDu = [];
         if (row.KhachHangs && row.KhachHangs.length > 0) {
           // Sử dụng dữ liệu khách hàng hiện có
           khachHangDayDu = row.KhachHangs;
         }
-        
+
         console.log('Khách hàng đầy đủ thông tin:', khachHangDayDu);
         setKhachHangDuocChon(khachHangDayDu);
         setSelectedKhachHangs(khachHangDayDu.map(kh => kh.MaKhachHang || kh.id));
@@ -306,7 +306,7 @@ function HopDong() {
         // Tải lại danh sách dịch vụ để đảm bảo có dữ liệu mới nhất
         const response = await phiDichVuService.getAll();
         console.log('Response từ phiDichVuService.getAll():', response);
-        
+
         // Xử lý cả hai trường hợp: mảng trực tiếp hoặc object có thuộc tính data
         let dichVuList = [];
         if (Array.isArray(response)) {
@@ -317,17 +317,17 @@ function HopDong() {
           console.error('Dữ liệu dịch vụ không đúng định dạng:', response);
           dichVuList = [];
         }
-        
+
         // Lưu danh sách dịch vụ cho dialog chọn
         setDichVusTuToaNha(dichVuList);
-        
+
         // Đảm bảo dịch vụ trong hợp đồng có đầy đủ thông tin
         let dichVuDayDu = [];
         if (row.DichVus && row.DichVus.length > 0) {
           // Sử dụng dữ liệu dịch vụ hiện có
           dichVuDayDu = row.DichVus;
         }
-        
+
         console.log('Dịch vụ đầy đủ thông tin:', dichVuDayDu);
         setDichVuDuocChon(dichVuDayDu);
         setSelectedDichVus(dichVuDayDu.map(dv => dv.MaDichVu || dv.id));
@@ -389,7 +389,7 @@ function HopDong() {
     try {
       console.log('Fetching rooms for building:', maNha);
       const response = await toaNhaService.getPhongs(maNha);
-      
+
       // Xử lý cả hai trường hợp: mảng trực tiếp hoặc object có thuộc tính data
       let data = [];
       if (Array.isArray(response)) {
@@ -397,7 +397,7 @@ function HopDong() {
       } else if (response && Array.isArray(response.data)) {
         data = response.data;
       }
-      
+
       console.log('Fetched rooms:', data);
       setListPhong(data);
     } catch (error) {
@@ -486,7 +486,7 @@ function HopDong() {
         MaPhongId: '',
         TenPhong: ''
       }));
-      
+
       // Xóa lỗi nếu đã chọn giá trị
       if (value) {
         setErrors(prev => ({ ...prev, MaNhaId: '' }));
@@ -505,7 +505,7 @@ function HopDong() {
         TienThue: giaThue,
         TienCoc: datCoc
       }));
-      
+
       // Xóa lỗi nếu đã chọn giá trị
       if (value) {
         setErrors(prev => ({ ...prev, MaPhongId: '' }));
@@ -516,22 +516,57 @@ function HopDong() {
   };
 
   const validateForm = () => {
-    const requiredFields = ['MaHopDong', 'NgayBatDau', 'NgayKetThuc', 'TienThue', 'NgayTinhTien', 'MaNhaId', 'MaPhongId', 'ChuKyThanhToan'];
+    const requiredFields = ['MaHopDong', 'NgayBatDau', 'NgayKetThuc', 'TienThue', 'TienCoc', 'NgayTinhTien', 'MaNhaId', 'MaPhongId', 'ChuKyThanhToan'];
     const newErrors = {};
 
     requiredFields.forEach(field => {
       if (!formData[field] ||
         (typeof formData[field] === 'string' && formData[field].trim() === '') ||
         (Array.isArray(formData[field]) && formData[field].length === 0)) {
-        newErrors[field] = 'Thông tin bắt buộc';
+        newErrors[field] = 'Vui lòng nhập thông tin này';
       }
     });
+
+    // Kiểm tra khách hàng và dịch vụ
     if (khachHangDuocChon.length === 0) {
       newErrors.KhachHangs = 'Cần thêm ít nhất một khách hàng';
     }
     if (dichVuDuocChon.length === 0) {
       newErrors.DichVus = 'Cần thêm ít nhất một dịch vụ';
     }
+
+    // Kiểm tra ngày bắt đầu
+    if (!formData.NgayBatDau) {
+      newErrors.NgayBatDau = 'Vui lòng chọn ngày bắt đầu';
+    } else {
+      const ngayBatDau = dayjs(formData.NgayBatDau);
+      if (ngayBatDau.isBefore(dayjs(), 'day')) {
+        newErrors.NgayBatDau = 'Ngày bắt đầu không được nhỏ hơn ngày hiện tại';
+      }
+    }
+
+    // Kiểm tra ngày kết thúc
+    if (!formData.NgayKetThuc) {
+      newErrors.NgayKetThuc = 'Vui lòng chọn ngày kết thúc';
+    } else {
+      const ngayKetThuc = dayjs(formData.NgayKetThuc);
+      const ngayBatDau = dayjs(formData.NgayBatDau);
+      if (ngayKetThuc.isBefore(ngayBatDau, 'day')) {
+        newErrors.NgayKetThuc = 'Ngày kết thúc phải lớn hơn ngày bắt đầu';
+      }
+    }
+
+    // Kiểm tra ngày tính tiền
+    if (!formData.NgayTinhTien) {
+      newErrors.NgayTinhTien = 'Vui lòng chọn ngày tính tiền';
+    } else {
+      const ngayTinhTien = dayjs(formData.NgayTinhTien);
+      const ngayBatDau = dayjs(formData.NgayBatDau);
+      if (ngayTinhTien.isBefore(ngayBatDau, 'day')) {
+        newErrors.NgayTinhTien = 'Ngày tính tiền phải lớn hơn hoặc bằng ngày bắt đầu';
+      }
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -570,21 +605,21 @@ function HopDong() {
     };
 
     try {
-      let response;
+      let response
       if (editId === null) {
-        response = await hopDongService.create(payload);
-        setSnackbar({ open: true, message: 'Thêm hợp đồng thành công', severity: 'success' });
+        response = await hopDongService.create(payload)
+        setSnackbar({ open: true, message: 'Thêm hợp đồng thành công', severity: 'success' })
       } else {
         response = await hopDongService.update(editId, payload);
-        setSnackbar({ open: true, message: 'Cập nhật hợp đồng thành công', severity: 'success' });
+        setSnackbar({ open: true, message: 'Cập nhật hợp đồng thành công', severity: 'success' })
       }
 
-      await fetchHopDong();
-      handleClose();
+      await fetchHopDong()
+      handleClose()
 
     } catch (error) {
       console.error('Lỗi khi lưu hợp đồng:', error.response?.data || error);
-      
+
       // Enhanced error handling to display backend validation messages
       if (error.response && error.response.status === 422) {
         const backendErrors = error.response.data.errors;
@@ -1164,7 +1199,10 @@ function HopDong() {
           <TableBody>
             {(filteredRows || []).map((row) => (
               <StyledTableRow key={row.MaHopDong}>
-                <StyledTableCell sx={{ p: '8px' }}>{row.MaHopDong}</StyledTableCell>
+                <StyledTableCell sx={{ p: '8px' }}>
+                  {row.MaHopDong}
+                  <Box sx={{ color: '#B9B9C3' }}>ID: {row.id}</Box>
+                </StyledTableCell>
                 <StyledTableCell sx={{ p: '8px' }}>
                   <Box>{row.KhachHangs && row.KhachHangs.length > 0 ? row.KhachHangs[0].HoTen : 'Không có'}</Box>
                   {row.KhachHangs && row.KhachHangs.length > 1 && (
@@ -1172,29 +1210,36 @@ function HopDong() {
                   )}
                 </StyledTableCell>
                 <StyledTableCell sx={{ p: '8px' }}>
-                  <Box>Phòng: {row.TenPhong || 'Không có'}</Box>
+                  <Box>{row.TenPhong || 'Không có'}</Box>
                   <Box sx={{ color: '#B9B9C3' }}>Tòa nhà: {row.TenNha || 'Không có'}</Box>
                 </StyledTableCell>
                 <StyledTableCell sx={{ p: '8px' }}>{formatCurrency(row.TienThue)}</StyledTableCell>
                 <StyledTableCell sx={{ p: '8px' }}>{formatCurrency(row.TienCoc)}</StyledTableCell>
-                <StyledTableCell sx={{ p: '8px' }}>{row.NgayBatDau}</StyledTableCell>
-                <StyledTableCell sx={{ p: '8px' }}>{row.NgayKetThuc}</StyledTableCell>
+                <StyledTableCell sx={{ p: '8px' }}>{row.NgayBatDau ? new Date(row.NgayBatDau).toLocaleDateString('vi-VN') : ''}</StyledTableCell>
+                <StyledTableCell sx={{ p: '8px' }}>{row.NgayKetThuc ? new Date(row.NgayKetThuc).toLocaleDateString('vi-VN') : ''}</StyledTableCell>
                 <StyledTableCell sx={{ p: '8px' }}>
-                  <span
-                    style={{
-                      padding: '4px 8px',
-                      borderRadius: '12px',
-                      color: row.TrangThai === 'Còn hạn' ? '#388e3c' : '#EA5455',
-                      backgroundColor: row.TrangThai === 'Còn hạn' ? '#c8e6c9' : '#EA54551F',
-                      fontWeight: 600,
-                      fontSize: '13px',
-                      display: 'inline-block',
-                      textAlign: 'center',
-                      minWidth: '80px'
-                    }}
-                  >
-                    {row.TrangThai}
-                  </span>
+                  {(() => {
+                    const isExpired = new Date(row.NgayKetThuc) < new Date(); // kiểm tra hết hạn
+                    const trangThai = isExpired ? 'Hết hạn' : 'Còn hạn';
+
+                    return (
+                      <span
+                        style={{
+                          padding: '4px 8px',
+                          borderRadius: '12px',
+                          color: trangThai === 'Còn hạn' ? '#388e3c' : '#EA5455',
+                          backgroundColor: trangThai === 'Còn hạn' ? '#c8e6c9' : '#EA54551F',
+                          fontWeight: 600,
+                          fontSize: '13px',
+                          display: 'inline-block',
+                          textAlign: 'center',
+                          minWidth: '80px'
+                        }}
+                      >
+                        {trangThai}
+                      </span>
+                    );
+                  })()}
                 </StyledTableCell>
                 <StyledTableCell sx={{ p: '8px' }}>
                   <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
