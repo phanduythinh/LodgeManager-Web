@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class PhiDichVuRequest extends FormRequest
 {
@@ -13,13 +14,20 @@ class PhiDichVuRequest extends FormRequest
 
     public function rules()
     {
+        $phiDichVuId = $this->route('phi_dich_vu');
+
         return [
-            'MaDichVu' => 'required|string|max:50',
+            'MaDichVu' => [
+                'required',
+                'string',
+                'max:50',
+                Rule::unique('phi_dich_vus', 'ma_dich_vu')->ignore($phiDichVuId),
+            ],
             'TenDichVu' => 'required|string|max:255',
             'LoaiDichVu' => 'required|string|max:50',
             'DonGia' => 'required|numeric|min:0',
             'DonViTinh' => 'required|string|max:50',
-            'TenNha' => 'required|string|max:255'
+            'TenNha' => 'sometimes|required|string|max:255'
         ];
     }
 
@@ -27,6 +35,7 @@ class PhiDichVuRequest extends FormRequest
     {
         return [
             'MaDichVu.required' => 'Mã dịch vụ không được để trống',
+            'MaDichVu.unique' => 'Mã dịch vụ đã tồn tại',
             'MaDichVu.max' => 'Mã dịch vụ không được vượt quá 50 ký tự',
             'TenDichVu.required' => 'Tên dịch vụ không được để trống',
             'TenDichVu.max' => 'Tên dịch vụ không được vượt quá 255 ký tự',
