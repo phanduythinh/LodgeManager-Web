@@ -37,7 +37,6 @@ function Phong() {
   const [filterTang, setFilterTang] = useState(null)
   const [filterTrangThai, setFilterTrangThai] = useState(null)
   const [searchText, setSearchText] = useState('')
-  const [listToaNha, setListToaNha] = useState([])
   const confirm = useConfirm()
   const [snackbar, setSnackbar] = useState({
     open: false,
@@ -45,43 +44,38 @@ function Phong() {
     severity: 'success'
   })
 
+  const fetchData = async () => {
+    try {
+      setLoading(true)
+      // Lấy danh sách tòa nhà
+      const buildingsResponse = await toaNhaService.getAll()
+      const buildingsData = Array.isArray(buildingsResponse) ? buildingsResponse :
+        (buildingsResponse && buildingsResponse.data) ? buildingsResponse.data : []
+      setBuildings(buildingsData)
+
+      // Lấy danh sách phòng
+      const response = await phongService.getAll()
+
+      // Xử lý dữ liệu
+      let data = []
+      if (Array.isArray(response)) {
+        data = response
+      } else if (response && Array.isArray(response.data)) {
+        data = response.data
+      }
+
+      setRooms(data)
+    } catch (error) {
+      console.error('Lỗi khi lấy danh sách phòng:', error)
+      setSnackbar({ open: true, message: `Lỗi khi tải dữ liệu: ${error.message}`, severity: 'error' })
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true)
-        // Lấy danh sách tòa nhà
-        const buildingsResponse = await toaNhaService.getAll()
-        const buildingsData = Array.isArray(buildingsResponse) ? buildingsResponse :
-          (buildingsResponse && buildingsResponse.data) ? buildingsResponse.data : []
-        setBuildings(buildingsData)
-
-        // Lấy danh sách phòng
-        const response = await phongService.getAll()
-        // console.log('API response:', response)
-
-        // Xử lý dữ liệu
-        let data = []
-        if (Array.isArray(response)) {
-          data = response
-        } else if (response && Array.isArray(response.data)) {
-          data = response.data
-        }
-
-        setRooms(data)
-      } catch (error) {
-        console.error('Lỗi khi lấy danh sách phòng:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
     fetchData()
   }, [])
-
-  const handleDelete = (MaPhong) => {
-    setRooms(rooms.filter(room => room.MaPhong !== MaPhong))
-  }
 
   const handleOpenAdd = () => {
     setFormData({
@@ -103,7 +97,7 @@ function Phong() {
   const handleOpenEdit = (row) => {
     setFormData(row)
     setErrors({})
-    setEditId(row.MaPhong)
+    setEditId(row.id) // Sử dụng id thay vì MaPhong
     setOpen(true)
   }
 
@@ -139,130 +133,41 @@ function Phong() {
   }
 
   const handleSubmit = async () => {
-    if (!validateForm()) return
+    if (!validateForm()) return;
 
+    setLoading(true);
     try {
-      setLoading(true)
-
-      // Chuẩn bị dữ liệu trước khi gửi
-      // Đảm bảo các trường số được chuyển từ chuỗi sang số
       const preparedData = {
         ...formData,
-        GiaThue: formData.GiaThue ? Number(formData.GiaThue) : 0,
-        DatCoc: formData.DatCoc ? Number(formData.DatCoc) : 0,
-        DienTich: formData.DienTich ? Number(formData.DienTich) : 0,
-        SoKhachToiDa: formData.SoKhachToiDa ? Number(formData.SoKhachToiDa) : 0
-      }
+        GiaThue: Number(formData.GiaThue) || 0,
+        DatCoc: Number(formData.DatCoc) || 0,
+        DienTich: Number(formData.DienTich) || 0,
+        SoKhachToiDa: Number(formData.SoKhachToiDa) || 0,
+      };
 
-      // Kiểm tra trùng mã phòng khi thêm mới
-      if (editId === null) {
+      if (editId) {
+        // Sửa
+        await phongService.update(editId, preparedData);
+        setSnackbar({ open: true, message: 'Cập nhật phòng thành công!', severity: 'success' });
+      } else {
+        // Thêm
         const isDuplicate = rooms.some(r => r.MaPhong === preparedData.MaPhong);
         if (isDuplicate) {
-          setErrors(prev => ({
-            ...prev,
-            MaPhong: 'Mã phòng đã tồn tại'
-          }));
+          setErrors(prev => ({ ...prev, MaPhong: 'Mã phòng đã tồn tại' }));
           setLoading(false);
           return;
         }
+        await phongService.create(preparedData);
+        setSnackbar({ open: true, message: 'Thêm phòng thành công!', severity: 'success' });
       }
 
-      // Xử lý thêm mới hoặc cập nhật
-      if (editId === null) {
-        // Thêm mới
-        try {
-          // Gọi API
-          const response = await phongService.create(preparedData);
-          console.log('Kết quả thêm phòng:', response);
-
-          // Lấy lại danh sách phòng
-          const updatedRoomsResponse = await phongService.getAll();
-          const updatedRooms = Array.isArray(updatedRoomsResponse) ? updatedRoomsResponse :
-            (updatedRoomsResponse && updatedRoomsResponse.data) ? updatedRoomsResponse.data : [];
-
-          setRooms(updatedRooms);
-          setOpen(false);
-          setSnackbar({
-            open: true,
-            message: 'Thêm phòng thành công!',
-            severity: 'success'
-          })
-        } catch (apiError) {
-          console.error('Lỗi khi gọi API thêm phòng:', apiError);
-
-          // Kiểm tra nếu là môi trường phát triển hoặc API không hoạt động
-          if (process.env.NODE_ENV === 'development') {
-            // Fallback: thêm trực tiếp vào state nếu API lỗi
-            setRooms(prev => [...prev, preparedData]);
-            setOpen(false);
-            setSnackbar({
-              open: true,
-              message: 'Thêm phòng thành công (chỉ lưu trên giao diện)!',
-              severity: 'success'
-            })
-          } else {
-            throw apiError; // Ném lỗi để xử lý ở catch bên ngoài
-          }
-        }
-      } else {
-        // Cập nhật
-        try {
-          // Gọi API
-          const response = await phongService.update(preparedData.MaPhong, preparedData);
-          console.log('Kết quả cập nhật phòng:', response);
-
-          // Lấy lại danh sách phòng
-          const updatedRoomsResponse = await phongService.getAll();
-          const updatedRooms = Array.isArray(updatedRoomsResponse) ? updatedRoomsResponse :
-            (updatedRoomsResponse && updatedRoomsResponse.data) ? updatedRoomsResponse.data : [];
-
-          setRooms(updatedRooms);
-          setOpen(false);
-          setSnackbar({
-            open: true,
-            message: 'Lưu tòa nhà thành công',
-            severity: 'success'
-          })
-        } catch (apiError) {
-          console.error('Lỗi khi gọi API cập nhật phòng:', apiError);
-
-          // Kiểm tra nếu là môi trường phát triển hoặc API không hoạt động
-          if (process.env.NODE_ENV === 'development') {
-            // Fallback: cập nhật trực tiếp vào state nếu API lỗi
-            const updatedRooms = [...rooms];
-            updatedRooms[editId] = preparedData;
-            setRooms(updatedRooms);
-            setOpen(false);
-            setSnackbar({
-              open: true,
-              message: 'Cập nhật phòng thành công (chỉ lưu trên giao diện)!',
-              severity: 'success'
-            })
-          } else {
-            throw apiError; // Ném lỗi để xử lý ở catch bên ngoài
-          }
-        }
-      }
+      setOpen(false);
+      setEditId(null);
+      await fetchData();
     } catch (error) {
       console.error('Lỗi khi lưu phòng:', error);
-      // Hiển thị thông tin lỗi chi tiết hơn
-      let errorMessage = 'Có lỗi xảy ra khi lưu phòng. ';
-
-      if (error.response) {
-        // Lỗi từ server với mã trạng thái
-        errorMessage += `Mã lỗi: ${error.response.status}. `;
-        if (error.response.data && error.response.data.message) {
-          errorMessage += error.response.data.message;
-        }
-      } else if (error.request) {
-        // Lỗi không nhận được phản hồi từ server
-        errorMessage += 'Không thể kết nối đến server. Kiểm tra kết nối mạng của bạn.';
-      } else {
-        // Lỗi khác
-        errorMessage += error.message || 'Lỗi không xác định.';
-      }
-
-      alert(errorMessage);
+      const errorMessage = error.response?.data?.message || error.message || 'Có lỗi xảy ra.';
+      setSnackbar({ open: true, message: `Lỗi: ${errorMessage}`, severity: 'error' });
     } finally {
       setLoading(false);
     }
@@ -270,23 +175,29 @@ function Phong() {
 
   const hanhdleDeletePhong = (row) => {
     confirm({
-      title: 'Xóa phòng',
-      description: `Bạn chắc chắn muốn xóa phòng ${row.TenPhong}?`,
+      title: 'Xác nhận xóa',
+      description: `Bạn có chắc chắn muốn xóa phòng ${row.TenPhong}?`,
       confirmationText: 'Xóa',
-      cancellationText: 'Hủy',
-      confirmationButtonProps: { variant: 'contained', color: 'error' },
-      cancellationButtonProps: { variant: 'outlined' }
-    }).then(async () => {
-      try {
-        setLoading(true)
-        await phongService.delete(row.MaPhong)
-        handleDelete(row.MaPhong)
-      } catch (error) {
-        console.error('Lỗi khi xóa phòng:', error)
-      } finally {
-        setLoading(false)
-      }
-    }).catch(() => { })
+      cancellationText: 'Hủy'
+    })
+      .then(async () => {
+        try {
+          setLoading(true);
+          // Luôn sử dụng id để xóa để đảm bảo tính nhất quán
+          const response = await phongService.delete(row.id)
+          setSnackbar({ open: true, message: 'Xóa phòng thành công!', severity: 'success' })
+          await fetchData();
+        } catch (error) {
+          console.error('Lỗi khi xóa phòng:', error)
+          const errorMessage = error.response?.data?.message || error.message || 'Có lỗi xảy ra.';
+          setSnackbar({ open: true, message: `Lỗi khi xóa phòng: ${errorMessage}`, severity: 'error' })
+        } finally {
+            setLoading(false);
+        }
+      })
+      .catch(() => {
+        // Người dùng đã hủy
+      })
   }
 
   // Filter rows theo filterToaNha, filterTang, filterTrangThai và searchText
