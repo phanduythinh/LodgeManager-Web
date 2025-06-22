@@ -568,7 +568,44 @@ function HopDong() {
     }
 
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+
+    if (Object.keys(newErrors).length > 0) {
+      // Xây dựng danh sách trường lỗi để hiển thị
+      const fieldLabels = {
+        MaHopDong: 'Mã hợp đồng',
+        MaNhaId: 'Tòa nhà',
+        MaPhongId: 'Phòng',
+        NgayBatDau: 'Ngày bắt đầu',
+        NgayKetThuc: 'Ngày kết thúc',
+        NgayTinhTien: 'Ngày bắt đầu tính tiền',
+        TienThue: 'Tiền thuê',
+        TienCoc: 'Tiền cọc',
+        ChuKyThanhToan: 'Chu kỳ thanh toán',
+        KhachHangs: 'Khách hàng',
+        DichVus: 'Dịch vụ'
+      };
+      const missingList = Object.keys(newErrors).map((k) => fieldLabels[k] || k).join(', ');
+
+      setSnackbar({
+        open: true,
+        message: `Thiếu/không hợp lệ: ${missingList}`,
+        severity: 'error'
+      });
+
+      // Tự động cuộn đến trường lỗi đầu tiên (nếu tìm thấy)
+      const firstErrorKey = Object.keys(newErrors)[0];
+      setTimeout(() => {
+        const errorElement = document.querySelector(`[name="${firstErrorKey}"]`);
+        if (errorElement && errorElement.scrollIntoView) {
+          errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          errorElement.focus();
+        }
+      }, 100);
+
+      return false;
+    }
+
+    return true;
   };
 
   const handleSubmit = async () => {
@@ -577,8 +614,11 @@ function HopDong() {
     setLoading(true);
 
     // 1. Find the selected room to get its numeric ID
-    const selectedPhong = listPhong.find(p => p.MaPhong === formData.MaPhongId);
-    if (!selectedPhong) {
+    const selectedPhong = listPhong.find(p =>
+        p.MaPhong === formData.MaPhongId ||
+        p.id === formData.MaPhongId // hỗ trợ trường hợp đang sửa, MaPhongId là id số
+      );
+    if (!selectedPhong && isNaN(formData.MaPhongId)) {
       setErrors(prev => ({ ...prev, MaPhongId: 'Vui lòng chọn phòng hợp lệ.' }));
       setLoading(false);
       return;
@@ -587,7 +627,7 @@ function HopDong() {
     // 2. Build the payload with the correct structure and data types
     const payload = {
       MaHopDong: formData.MaHopDong,
-      MaPhongId: selectedPhong.id, // Send the numeric ID
+      MaPhongId: selectedPhong ? selectedPhong.id : Number(formData.MaPhongId),
       NgayBatDau: formData.NgayBatDau ? dayjs(formData.NgayBatDau).format('YYYY-MM-DD') : null,
       NgayKetThuc: formData.NgayKetThuc ? dayjs(formData.NgayKetThuc).format('YYYY-MM-DD') : null,
       TienThue: formData.TienThue,
