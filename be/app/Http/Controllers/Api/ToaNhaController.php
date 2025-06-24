@@ -15,7 +15,7 @@ class ToaNhaController extends Controller
     {
         try {
             $toaNhas = ToaNha::with(['phongs', 'phiDichVus'])->get();
-            
+
             // Chuyển đổi dữ liệu để phù hợp với cấu trúc frontend
             $formattedToaNhas = $toaNhas->map(function ($toaNha) {
                 return [
@@ -36,7 +36,7 @@ class ToaNhaController extends Controller
                     'SoPhong' => $toaNha->phongs->count()
                 ];
             });
-            
+
             return response()->json($formattedToaNhas);
         } catch (\Exception $e) {
             Log::error('Lỗi khi lấy danh sách tòa nhà: ' . $e->getMessage());
@@ -106,7 +106,7 @@ class ToaNhaController extends Controller
     {
         try {
             $toaNha = ToaNha::with(['phongs', 'phiDichVus'])->findOrFail($id);
-            
+
             // Chuyển đổi dữ liệu để phù hợp với cấu trúc frontend
             $formattedToaNha = [
                 'id' => $toaNha->id,
@@ -125,7 +125,7 @@ class ToaNhaController extends Controller
                 })->toArray(),
                 'SoPhong' => $toaNha->phongs->count()
             ];
-            
+
             return response()->json($formattedToaNha);
         } catch (\Exception $e) {
             Log::error('Lỗi khi lấy thông tin tòa nhà: ' . $e->getMessage());
@@ -142,7 +142,7 @@ class ToaNhaController extends Controller
             DB::beginTransaction();
 
             $toaNha = ToaNha::findOrFail($id);
-            
+
             // Chuyển đổi dữ liệu từ frontend sang backend
             $toaNhaData = [
                 'ten_nha' => $request->input('TenNha'),
@@ -159,7 +159,7 @@ class ToaNhaController extends Controller
 
             // Lấy lại tòa nhà với các mối quan hệ
             $toaNha = ToaNha::with(['phongs', 'phiDichVus'])->findOrFail($id);
-            
+
             // Chuyển đổi dữ liệu trả về cho frontend
             $formattedToaNha = [
                 'id' => $toaNha->id,
@@ -235,7 +235,7 @@ class ToaNhaController extends Controller
         try {
             // Ghi log ID để debug
             Log::info('getPhongs được gọi với ID/MaNha: ' . $id);
-            
+
             // Kiểm tra ID có hợp lệ không
             if (!$id) {
                 return response()->json([
@@ -243,20 +243,20 @@ class ToaNhaController extends Controller
                     'message' => 'ID tòa nhà không hợp lệ'
                 ], 400);
             }
-            
+
             // Tìm tòa nhà theo ID hoặc MaNha
             $toaNha = null;
-            
+
             // Nếu là số, thử tìm theo ID trước
             if (is_numeric($id)) {
                 $toaNha = ToaNha::find($id);
             }
-            
+
             // Nếu không tìm thấy theo ID, thử tìm theo MaNha
             if (!$toaNha) {
                 $toaNha = ToaNha::where('ma_nha', $id)->first();
             }
-            
+
             // Kiểm tra tòa nhà có tồn tại không
             if (!$toaNha) {
                 return response()->json([
@@ -264,15 +264,15 @@ class ToaNhaController extends Controller
                     'message' => 'Không tìm thấy tòa nhà với ID/MaNha: ' . $id
                 ], 404);
             }
-            
+
             // Lấy danh sách phòng của tòa nhà với eager loading
             $phongs = $toaNha->phongs()->with('toaNha')->get();
-            
+
             // Kiểm tra danh sách phòng có trống không
             if ($phongs->isEmpty()) {
                 return response()->json([]);
             }
-            
+
             // Chuyển đổi dữ liệu để phù hợp với cấu trúc frontend
             $formattedPhongs = $phongs->map(function ($phong) use ($toaNha) {
                 try {
@@ -296,7 +296,7 @@ class ToaNhaController extends Controller
                     return null;
                 }
             })->filter()->values();
-            
+
             return response()->json($formattedPhongs);
         } catch (\Exception $e) {
             Log::error('Lỗi khi lấy danh sách phòng theo tòa nhà: ' . $e->getMessage());
@@ -304,6 +304,38 @@ class ToaNhaController extends Controller
             return response()->json([
                 'status' => 'error',
                 'message' => 'Có lỗi xảy ra khi lấy danh sách phòng theo tòa nhà: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function search(Request $request)
+    {
+        try {
+            $query = ToaNha::query();
+
+            if ($request->has('keyword')) {
+                $keyword = $request->keyword;
+                $query->where(function ($q) use ($keyword) {
+                    $q->where('ten', 'like', "%{$keyword}%")
+                        ->orWhere('dia_chi', 'like', "%{$keyword}%");
+                });
+            }
+
+            if ($request->has('trang_thai')) {
+                $query->where('trang_thai', $request->trang_thai);
+            }
+
+            $toaNhas = $query->with('chuToaNha')->paginate(10);
+
+            return response()->json([
+                'status' => 'success',
+                'data' => $toaNhas
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Lỗi khi tìm kiếm tòa nhà: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Có lỗi xảy ra khi tìm kiếm tòa nhà'
             ], 500);
         }
     }
