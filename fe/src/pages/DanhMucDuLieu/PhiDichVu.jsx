@@ -124,7 +124,7 @@ function PhiDichVu() {
 
   const handleOpenAdd = () => {
     setFormData({
-      MaDichVu: '',
+      // MaDichVu: '',
       MaNhaId: '',
       TenDichVu: '',
       LoaiDichVu: '',
@@ -479,8 +479,8 @@ function PhiDichVu() {
                 filteredRows.map((row, index) => (
                   <StyledTableRow key={row.MaDichVu}>
                     <StyledTableCell sx={{ p: '8px' }}>
-                      {row.MaDichVu}
-                      <Box sx={{ color: '#B9B9C3' }}>ID: {row.id}</Box>
+                      {/* {row.MaDichVu} */}
+                      <Box >{row.id}</Box>
                     </StyledTableCell>
                     <StyledTableCell sx={{ p: '8px' }}>
                       {row.TenDichVu}

@@ -1240,8 +1240,8 @@ function HopDong() {
             {(filteredRows || []).map((row) => (
               <StyledTableRow key={row.MaHopDong}>
                 <StyledTableCell sx={{ p: '8px' }}>
-                  {row.MaHopDong}
-                  <Box sx={{ color: '#B9B9C3' }}>ID: {row.id}</Box>
+                  {/* {row.MaHopDong} */}
+                  <Box >{row.id}</Box>
                 </StyledTableCell>
                 <StyledTableCell sx={{ p: '8px' }}>
                   <Box>{row.KhachHangs && row.KhachHangs.length > 0 ? row.KhachHangs[0].HoTen : 'Không có'}</Box>

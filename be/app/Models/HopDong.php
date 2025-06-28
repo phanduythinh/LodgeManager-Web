@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class HopDong extends Model
 {
@@ -44,5 +45,13 @@ class HopDong extends Model
         return $this->belongsToMany(PhiDichVu::class, 'hop_dong_dich_vu')
             ->withPivot(['ma_cong_to', 'chi_so_dau', 'ngay_tinh_phi'])
             ->withTimestamps();
+    }
+
+    /**
+     * Relationship: a contract has many invoices (hoa_dons)
+     */
+    public function hoaDons(): HasMany
+    {
+        return $this->hasMany(HoaDon::class, 'hop_dong_id');
     }
 }

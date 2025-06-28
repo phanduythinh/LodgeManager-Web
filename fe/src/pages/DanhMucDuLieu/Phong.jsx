@@ -530,8 +530,8 @@ function Phong() {
                 filteredRooms.map((room, index) => (
                   <StyledTableRow key={room.MaPhong}>
                     <StyledTableCell sx={{ p: '8px' }}>
-                      {room.MaPhong}
-                      <Box sx={{ color: '#B9B9C3' }}>ID: {room.id}</Box>
+                      {/* {room.MaPhong} */}
+                      <Box >{room.id}</Box>
                     </StyledTableCell>
                     <StyledTableCell sx={{ p: '8px' }}>
                       <Box>{room.TenPhong}</Box>

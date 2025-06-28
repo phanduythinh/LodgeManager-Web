@@ -35,16 +35,16 @@ const NAVIGATION = [
   //   title: 'Đăng nhập',
   //   icon: <LoginIcon />
   // },
-  {
-    segment: 'ApiConnectionTest',
-    title: 'Kiểm tra kết nối API tổng thể',
-    icon: <ApiIcon />
-  },
-  {
-    segment: 'ApiTest',
-    title: 'Kiểm tra API',
-    icon: <ApiIcon />
-  },
+  // {
+  //   segment: 'ApiConnectionTest',
+  //   title: 'Kiểm tra kết nối API tổng thể',
+  //   icon: <ApiIcon />
+  // },
+  // {
+  //   segment: 'ApiTest',
+  //   title: 'Kiểm tra API',
+  //   icon: <ApiIcon />
+  // },
   {
     kind: 'header',
     title: 'QUẢN LÝ & VẬN HÀNH'

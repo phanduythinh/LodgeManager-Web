@@ -694,8 +694,8 @@ function KhachHang() {
             {filteredRows.map((row) => (
               <StyledTableRow key={row.MaKhachHang || row.id}>
                 <StyledTableCell sx={{ p: '8px' }}>
-                  {row.MaKhachHang}
-                  <Box sx={{ color: '#B9B9C3' }}>ID: {row.id}</Box>
+                  {/* {row.MaKhachHang} */}
+                  <Box >{row.id}</Box>
                 </StyledTableCell>
                 <StyledTableCell sx={{ p: '8px' }}>{row.HoTen}</StyledTableCell>
                 {/* <StyledTableCell sx={{ p: '8px' }}>{row.GioiTinh || row.gioi_tinh}</StyledTableCell> */}
